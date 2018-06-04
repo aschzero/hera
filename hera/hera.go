@@ -25,7 +25,7 @@ func main() {
 
 	cli, err := client.NewClient("unix:///var/run/docker.sock", "v1.22", nil, nil)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Error when trying to connect to the Docker daemon: %s", err)
 		return
 	}
 
@@ -35,9 +35,7 @@ func main() {
 	}
 
 	certificate := NewCertificate()
-	if certificate.IsNeeded() {
-		certificate.Watch()
-	}
+	certificate.VerifyCertificate()
 
 	hera.Listen()
 }

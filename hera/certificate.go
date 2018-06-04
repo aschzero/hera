@@ -15,6 +15,11 @@ type Certificate struct {
 }
 
 const (
+	CertificateDirectory = "/root/.cloudflared"
+	CertificateFileName  = "cert.pem"
+)
+
+const (
 	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
 		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +
 		"\n 2. Obtain a certificate by visiting https://www.cloudflare.com/a/warp" +
@@ -24,25 +29,20 @@ const (
 )
 
 func NewCertificate() *Certificate {
-	directory := "/root/.cloudflared"
-	file := "cert.pem"
-
 	certificate := &Certificate{
-		Directory: directory,
-		FileName:  file,
-		Path:      filepath.Join(directory, file),
+		Directory: CertificateDirectory,
+		FileName:  CertificateFileName,
+		Path:      filepath.Join(CertificateDirectory, CertificateFileName),
 	}
 
 	return certificate
 }
 
-func (c Certificate) IsNeeded() bool {
+func (c Certificate) VerifyCertificate() {
 	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
 		log.Error(CertificateIsNeededMessage)
-		return true
+		c.Watch()
 	}
-
-	return false
 }
 
 func (c Certificate) Watch() {
