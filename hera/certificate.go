@@ -24,7 +24,7 @@ const (
 		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +
 		"\n 2. Obtain a certificate by visiting https://www.cloudflare.com/a/warp" +
 		"\n 3. Rename the certificate to `cert.pem` and move it to the volume" +
-		"\n\n See https://github.com/aschaper/hera#obtaining-a-certificate for more info." +
+		"\n\n See https://github.com/aschaper/hera#obtain-a-certificate for more info." +
 		"\n\n Hera is now watching for a `cert.pem` file and will resume operation when a certificate is found.\n"
 )
 
