@@ -34,7 +34,10 @@ func main() {
 		ActiveTunnels: make(map[string]*Tunnel),
 	}
 
-	log.Info("Hera is listening...")
+	certificate := NewCertificate()
+	if certificate.IsNeeded() {
+		certificate.Watch()
+	}
 
 	hera.Listen()
 }
@@ -47,17 +50,17 @@ func LogInit() {
 
 	stderrBackend := logging.NewLogBackend(os.Stderr, "", 0)
 	logFileBackend := logging.NewLogBackend(logFile, "", 0)
-
 	logFileBackendFormat := logging.MustStringFormatter(
 		`%{time:15:04:00.000} [%{level}] %{message}`,
 	)
-
 	logFileBackendFormatter := logging.NewBackendFormatter(logFileBackend, logFileBackendFormat)
 
 	logging.SetBackend(stderrBackend, logFileBackendFormatter)
 }
 
 func (h Hera) Listen() {
+	log.Info("\nHera is listening...\n")
+
 	messages, errs := h.Client.Events(context.Background(), types.EventsOptions{})
 
 	for {
@@ -105,16 +108,18 @@ func (h Hera) HandleStartEvent(event events.Message) {
 	}
 
 	tunnel := NewTunnel(resolved[0], heraHostname, heraPort)
-
 	h.ActiveTunnels[hostname] = tunnel
 
-	tunnel.Start()
+	err = tunnel.Start()
+	if err != nil {
+		log.Errorf("Error while trying to start tunnel: %s", err)
+	}
 }
 
 func (h Hera) HandleDieEvent(event events.Message) {
 	container, err := h.Client.ContainerInspect(context.Background(), event.ID)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Error while trying to stop tunnel: %s", err)
 		return
 	}
 
