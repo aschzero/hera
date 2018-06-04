@@ -1,3 +1,3 @@
-.vscode/*
-bin/*
-dist/*
+.vscode
+dist
+.cloudflared
