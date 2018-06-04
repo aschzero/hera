@@ -19,6 +19,8 @@ type Hera struct {
 func main() {
 	InitLogger()
 
+	log.Infof("\nHera v%s", CurrentVersion())
+
 	cli, err := client.NewClient("unix:///var/run/docker.sock", "v1.22", nil, nil)
 	if err != nil {
 		log.Errorf("Error when trying to connect to the Docker daemon: %s", err)
@@ -37,7 +39,7 @@ func main() {
 }
 
 func (h Hera) Listen() {
-	log.Info("\nHera is listening...\n")
+	log.Info("Hera is listening...\n\n")
 
 	messages, errs := h.Client.Events(context.Background(), types.EventsOptions{})
 
