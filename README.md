@@ -8,6 +8,8 @@ Hera monitors the state of your configured services to instantly start a tunnel 
 
 [![](https://images.microbadger.com/badges/version/aschaper/hera.svg)](https://microbadger.com/images/aschaper/hera "Get your own version badge on microbadger.com")
 [![](https://images.microbadger.com/badges/image/aschaper/hera.svg)](https://microbadger.com/images/aschaper/hera "Get your own image badge on microbadger.com")
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aschaper/hera/blob/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/aschaper/hera)](https://goreportcard.com/report/github.com/aschaper/hera)
 
 ----
 
@@ -109,7 +111,7 @@ docker run \
 ## Required Volumes
 
 * `/var/run/docker.sock` – Attaching the Docker daemon as a volume allows Hera to monitor container events.
-* `/path/to/cert.pem` – Allows Cloudflare to authenticate you during tunnel creation. Replace with the path of the certificate obtained earlier.
+* `/path/to/cert` – Allows Cloudflare to authenticate you during tunnel creation. Replace with the path of the certificate obtained earlier.
 
 ## Persisting Logs
 
