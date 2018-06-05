@@ -17,28 +17,6 @@ type Hera struct {
 	ActiveTunnels map[string]*Tunnel
 }
 
-func main() {
-	InitLogger()
-
-	log.Infof("\nHera v%s", CurrentVersion())
-
-	cli, err := client.NewClient("unix:///var/run/docker.sock", "v1.22", nil, nil)
-	if err != nil {
-		log.Errorf("Error when trying to connect to the Docker daemon: %s", err)
-		return
-	}
-
-	hera := &Hera{
-		Client:        cli,
-		ActiveTunnels: make(map[string]*Tunnel),
-	}
-
-	certificate := NewCertificate()
-	certificate.VerifyCertificate()
-
-	hera.Listen()
-}
-
 // Listen continuously listens for container start or die events.
 func (h Hera) Listen() {
 	log.Info("Hera is listening...\n\n")
