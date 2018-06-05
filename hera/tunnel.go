@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// Tunnel holds tunnel metadata and configuration
 type Tunnel struct {
 	ContainerHostname string
 	HeraHostname      string
@@ -15,6 +16,7 @@ type Tunnel struct {
 	TunnelConfig      *TunnelConfig
 }
 
+// TunnelConfig holds tunnel configuration
 type TunnelConfig struct {
 	ServicePath         string
 	RunFilePath         string
@@ -24,6 +26,7 @@ type TunnelConfig struct {
 	LogFilePath         string
 }
 
+// NewTunnel returns a Tunnel with the necessary metadata and configuration
 func NewTunnel(containerHostname string, heraHostname string, heraPort string) *Tunnel {
 	servicePath := filepath.Join("/etc/services.d", heraHostname)
 	runFilePath := filepath.Join(servicePath, "run")
@@ -51,6 +54,7 @@ func NewTunnel(containerHostname string, heraHostname string, heraPort string) *
 	return tunnel
 }
 
+// Start starts a tunnel
 func (t Tunnel) Start() error {
 	log.Infof("\nRegistering tunnel %s @ %s:%s", t.HeraHostname, t.ContainerHostname, t.HeraPort)
 	log.Infof("Logging to %s\n\n", t.TunnelConfig.LogFilePath)
@@ -82,6 +86,7 @@ func (t Tunnel) Start() error {
 	return nil
 }
 
+// Stop stops a tunnel
 func (t Tunnel) Stop() {
 	_, err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Output()
 	if err != nil {
@@ -92,6 +97,7 @@ func (t Tunnel) Stop() {
 	log.Infof("\nStopped tunnel %s\n\n", t.HeraHostname)
 }
 
+// PrepareService creates the tunnel service directory if it doesn't exist
 func (t Tunnel) PrepareService() error {
 	if _, err := os.Stat(t.TunnelConfig.ServicePath); os.IsNotExist(err) {
 		err := os.Mkdir(t.TunnelConfig.ServicePath, os.ModePerm)
@@ -103,6 +109,7 @@ func (t Tunnel) PrepareService() error {
 	return nil
 }
 
+// GenerateConfigFile generates a new cloudflared config file
 func (t Tunnel) GenerateConfigFile() error {
 	configFile, err := os.Create(t.TunnelConfig.ConfigFilePath)
 
@@ -124,6 +131,8 @@ func (t Tunnel) GenerateConfigFile() error {
 	return err
 }
 
+// GenerateRunFile generates the tunnel service run file with
+// the necessary permissions.
 func (t Tunnel) GenerateRunFile() error {
 	runFile, err := os.Create(t.TunnelConfig.RunFilePath)
 	if err != nil {
@@ -152,6 +161,7 @@ func (t Tunnel) GenerateRunFile() error {
 	return nil
 }
 
+// StartService starts the tunnel service
 func (t Tunnel) StartService() error {
 	if _, err := os.Stat(t.TunnelConfig.S6TunnelServicePath); err == nil {
 		_, err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.S6TunnelServicePath}...).Output()

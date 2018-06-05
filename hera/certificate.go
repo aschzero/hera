@@ -8,17 +8,14 @@ import (
 	"github.com/radovskyb/watcher"
 )
 
+// Certificate holds metadata of the cert.pem file
 type Certificate struct {
 	Directory string
 	FileName  string
 	Path      string
 }
 
-const (
-	CertificateDirectory = "/root/.cloudflared"
-	CertificateFileName  = "cert.pem"
-)
-
+// CertificateIsNeededMessage is displayed when a cert.pem file cannot be found
 const (
 	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
 		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +
@@ -28,16 +25,21 @@ const (
 		"\n\n Hera is now watching for a `cert.pem` file and will resume operation when a certificate is found.\n"
 )
 
+// NewCertificate returns a Certificate with default metadata
 func NewCertificate() *Certificate {
+	dir := "/root/.cloudflared"
+	name := "cert.pem"
+
 	certificate := &Certificate{
-		Directory: CertificateDirectory,
-		FileName:  CertificateFileName,
-		Path:      filepath.Join(CertificateDirectory, CertificateFileName),
+		Directory: dir,
+		FileName:  name,
+		Path:      filepath.Join(dir, name),
 	}
 
 	return certificate
 }
 
+// VerifyCertificate ensure a certificate file exists
 func (c Certificate) VerifyCertificate() {
 	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
 		log.Error(CertificateIsNeededMessage)
@@ -45,6 +47,8 @@ func (c Certificate) VerifyCertificate() {
 	}
 }
 
+// Watch pauses Hera to wait until a certificate file exists.
+// Hera resumes when a certificate is found.
 func (c Certificate) Watch() {
 	w := watcher.New()
 

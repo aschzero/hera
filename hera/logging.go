@@ -9,6 +9,7 @@ import (
 
 var log = logging.MustGetLogger("hera")
 
+// InitLogger configures logging
 func InitLogger() {
 	logFile, err := os.OpenFile("/var/log/hera/hera.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {

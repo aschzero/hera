@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
+// Hera holds an instantiated Client and a map of active tunnels
 type Hera struct {
 	Client        *client.Client
 	ActiveTunnels map[string]*Tunnel
@@ -38,6 +39,7 @@ func main() {
 	hera.Listen()
 }
 
+// Listen continuously listens for container start or die events.
 func (h Hera) Listen() {
 	log.Info("Hera is listening...\n\n")
 
@@ -66,6 +68,8 @@ func (h Hera) Listen() {
 	}
 }
 
+// HandleStartEvent checks for valid Hera configuration and creates a new
+// tunnel whenn applicable.
 func (h Hera) HandleStartEvent(event events.Message) {
 	container, err := h.Client.ContainerInspect(context.Background(), event.ID)
 	if err != nil {
@@ -96,6 +100,7 @@ func (h Hera) HandleStartEvent(event events.Message) {
 	}
 }
 
+// HandleDieEvent stops a tunnel if it exists when a container is stopped.
 func (h Hera) HandleDieEvent(event events.Message) {
 	container, err := h.Client.ContainerInspect(context.Background(), event.ID)
 	if err != nil {
