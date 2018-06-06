@@ -88,8 +88,7 @@ func (t Tunnel) Start() error {
 
 // Stop stops a tunnel
 func (t Tunnel) Stop() {
-	_, err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Output()
-	if err != nil {
+	if err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Run(); err != nil {
 		log.Errorf("Error while stopping tunnel %s: %s", t.HeraHostname, err)
 		return
 	}
@@ -164,8 +163,7 @@ func (t Tunnel) GenerateRunFile() error {
 // StartService starts the tunnel service
 func (t Tunnel) StartService() error {
 	if _, err := os.Stat(t.TunnelConfig.S6TunnelServicePath); err == nil {
-		_, err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.S6TunnelServicePath}...).Output()
-		if err != nil {
+		if err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.S6TunnelServicePath}...).Run(); err != nil {
 			return err
 		}
 
@@ -177,8 +175,7 @@ func (t Tunnel) StartService() error {
 		return err
 	}
 
-	_, err = exec.Command("s6-svscanctl", []string{"-a", t.TunnelConfig.S6ServicesPath}...).Output()
-	if err != nil {
+	if err = exec.Command("s6-svscanctl", []string{"-a", t.TunnelConfig.S6ServicesPath}...).Run(); err != nil {
 		return err
 	}
 
