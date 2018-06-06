@@ -1,12 +1,15 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/spf13/afero"
 )
+
+var fs = afero.NewOsFs()
 
 // Tunnel holds tunnel metadata and configuration
 type Tunnel struct {
@@ -18,6 +21,7 @@ type Tunnel struct {
 
 // TunnelConfig holds tunnel configuration
 type TunnelConfig struct {
+	fs                  afero.Fs
 	ServicePath         string
 	RunFilePath         string
 	S6ServicesPath      string
@@ -59,27 +63,19 @@ func (t Tunnel) Start() error {
 	log.Infof("\nRegistering tunnel %s @ %s:%s", t.HeraHostname, t.ContainerHostname, t.HeraPort)
 	log.Infof("Logging to %s\n\n", t.TunnelConfig.LogFilePath)
 
-	err := t.PrepareService()
-	if err != nil {
-		log.Errorf("Error while preparing service for tunnel: %s", err)
+	if err := t.PrepareService(); err != nil {
 		return err
 	}
 
-	err = t.GenerateConfigFile()
-	if err != nil {
-		log.Errorf("Error while generating config file for tunnel: %s", err)
+	if err := t.GenerateConfigFile(); err != nil {
 		return err
 	}
 
-	err = t.GenerateRunFile()
-	if err != nil {
-		log.Errorf("Error while generating run file for tunnel: %s", err)
+	if err := t.GenerateRunFile(); err != nil {
 		return err
 	}
 
-	err = t.StartService()
-	if err != nil {
-		log.Errorf("Error while trying to start service for tunnel: %s", err)
+	if err := t.StartService(); err != nil {
 		return err
 	}
 
@@ -98,11 +94,13 @@ func (t Tunnel) Stop() {
 
 // PrepareService creates the tunnel service directory if it doesn't exist
 func (t Tunnel) PrepareService() error {
-	if _, err := os.Stat(t.TunnelConfig.ServicePath); os.IsNotExist(err) {
-		err := os.Mkdir(t.TunnelConfig.ServicePath, os.ModePerm)
-		if err != nil {
-			return err
-		}
+	exists, err := afero.DirExists(fs, t.TunnelConfig.ServicePath)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		fs.Mkdir(t.TunnelConfig.ServicePath, os.ModePerm)
 	}
 
 	return nil
@@ -110,50 +108,21 @@ func (t Tunnel) PrepareService() error {
 
 // GenerateConfigFile generates a new cloudflared config file
 func (t Tunnel) GenerateConfigFile() error {
-	configFile, err := os.Create(t.TunnelConfig.ConfigFilePath)
+	config := fmt.Sprintf("hostname: %s\nurl: %s:%s\nlogfile: %s", t.HeraHostname, t.ContainerHostname, t.HeraPort, t.TunnelConfig.LogFilePath)
 
-	defer configFile.Close()
-
-	lines := []string{
-		fmt.Sprintf("hostname: %s", t.HeraHostname),
-		fmt.Sprintf("url: %s:%s", t.ContainerHostname, t.HeraPort),
-		fmt.Sprintf("logfile: %s", t.TunnelConfig.LogFilePath),
+	if err := afero.WriteFile(fs, t.TunnelConfig.ConfigFilePath, []byte(config), 0644); err != nil {
+		return err
 	}
 
-	writer := bufio.NewWriter(configFile)
-	for _, line := range lines {
-		writer.WriteString(line + "\n")
-	}
-
-	writer.Flush()
-
-	return err
+	return nil
 }
 
 // GenerateRunFile generates the tunnel service run file with
 // the necessary permissions.
 func (t Tunnel) GenerateRunFile() error {
-	runFile, err := os.Create(t.TunnelConfig.RunFilePath)
-	if err != nil {
-		return err
-	}
+	run := fmt.Sprintf("#!/usr/bin/with-contenv sh\nexec cloudflared --config %s", t.TunnelConfig.ConfigFilePath)
 
-	defer runFile.Close()
-
-	lines := []string{
-		"#!/usr/bin/with-contenv sh\n",
-		"exec cloudflared --config " + t.TunnelConfig.ConfigFilePath,
-	}
-
-	writer := bufio.NewWriter(runFile)
-	for _, line := range lines {
-		writer.WriteString(line)
-	}
-
-	writer.Flush()
-
-	err = os.Chmod(t.TunnelConfig.RunFilePath, 0755)
-	if err != nil {
+	if err := afero.WriteFile(fs, t.TunnelConfig.RunFilePath, []byte(run), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -162,21 +131,23 @@ func (t Tunnel) GenerateRunFile() error {
 
 // StartService starts the tunnel service
 func (t Tunnel) StartService() error {
-	if _, err := os.Stat(t.TunnelConfig.S6TunnelServicePath); err == nil {
-		if err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.S6TunnelServicePath}...).Run(); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	err := os.Symlink(t.TunnelConfig.ServicePath, t.TunnelConfig.S6TunnelServicePath)
+	exists, err := afero.Exists(fs, t.TunnelConfig.S6TunnelServicePath)
 	if err != nil {
 		return err
 	}
 
-	if err = exec.Command("s6-svscanctl", []string{"-a", t.TunnelConfig.S6ServicesPath}...).Run(); err != nil {
-		return err
+	if exists {
+		if err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.S6TunnelServicePath}...).Run(); err != nil {
+			return err
+		}
+	} else {
+		if err := os.Symlink(t.TunnelConfig.ServicePath, t.TunnelConfig.S6TunnelServicePath); err != nil {
+			return err
+		}
+
+		if err := exec.Command("s6-svscanctl", []string{"-a", t.TunnelConfig.S6ServicesPath}...).Run(); err != nil {
+			return err
+		}
 	}
 
 	return nil
