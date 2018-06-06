@@ -168,6 +168,8 @@ func (t Tunnel) StartService() error {
 		if err != nil {
 			return err
 		}
+
+		return nil
 	}
 
 	err := os.Symlink(t.TunnelConfig.ServicePath, t.TunnelConfig.S6TunnelServicePath)
