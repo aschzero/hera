@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -55,26 +56,27 @@ func (h Hera) HandleStartEvent(event events.Message) {
 	}
 
 	labels := container.Config.Labels
-	heraHostname, heraHostnamePresent := labels["hera.hostname"]
-	heraPort, heraPortPresent := labels["hera.port"]
-	if !heraHostnamePresent || !heraPortPresent {
-		log.Infof("Ignoring container %s: no hera labels found", event.ID)
+	if err := verifyLabelConfig(labels); err != nil {
+		log.Errorf("Ignoring container %s: %s", container.ID, err)
 		return
 	}
 
+	heraHostname, _ := labels["hera.hostname"]
+	heraPort, _ := labels["hera.port"]
+
 	hostname := container.Config.Hostname
-	resolved, err := net.LookupHost(hostname)
+	resolved, err := resolvedHostname(hostname)
 	if err != nil {
 		log.Errorf("Unable to resolve hostname %s for container %s. Ensure the container is accessible within Hera's network.", hostname, container.ID)
 		return
 	}
 
-	tunnel := NewTunnel(resolved[0], heraHostname, heraPort)
+	tunnel := NewTunnel(resolved, heraHostname, heraPort)
 	h.ActiveTunnels[hostname] = tunnel
 
 	err = tunnel.Start()
 	if err != nil {
-		log.Errorf("Error while trying to start tunnel: %s", err)
+		log.Errorf("Error trying to start tunnel: %s", err)
 	}
 }
 
@@ -82,12 +84,36 @@ func (h Hera) HandleStartEvent(event events.Message) {
 func (h Hera) HandleDieEvent(event events.Message) {
 	container, err := h.Client.ContainerInspect(context.Background(), event.ID)
 	if err != nil {
-		log.Errorf("Error while trying to stop tunnel: %s", err)
+		log.Errorf("Error trying to stop tunnel: %s", err)
 		return
 	}
 
 	hostname := container.Config.Hostname
-	if tunnel, tunnelPresent := h.ActiveTunnels[hostname]; tunnelPresent {
+	if tunnel, ok := h.ActiveTunnels[hostname]; ok {
 		tunnel.Stop()
 	}
+}
+
+func verifyLabelConfig(labels map[string]string) error {
+	required := []string{
+		"hera.hostname",
+		"hera.port",
+	}
+
+	for _, label := range required {
+		if _, ok := labels[label]; !ok {
+			return fmt.Errorf("%s label not found", label)
+		}
+	}
+
+	return nil
+}
+
+func resolvedHostname(hostname string) (string, error) {
+	resolved, err := net.LookupHost(hostname)
+	if err != nil {
+		return "", err
+	}
+
+	return resolved[0], nil
 }
