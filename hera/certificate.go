@@ -1,11 +1,11 @@
 package main
 
 import (
-	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/radovskyb/watcher"
+	"github.com/spf13/afero"
 )
 
 // Certificate holds metadata of the cert.pem file
@@ -14,16 +14,6 @@ type Certificate struct {
 	FileName  string
 	Path      string
 }
-
-// CertificateIsNeededMessage is displayed when a cert.pem file cannot be found
-const (
-	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
-		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +
-		"\n 2. Obtain a certificate by visiting https://www.cloudflare.com/a/warp" +
-		"\n 3. Rename the certificate to `cert.pem` and move it to the volume" +
-		"\n\n See https://github.com/aschaper/hera#obtain-a-certificate for more info." +
-		"\n\n Hera is now watching for a `cert.pem` file and will resume operation when a certificate is found.\n"
-)
 
 // NewCertificate returns a Certificate with default metadata
 func NewCertificate() *Certificate {
@@ -41,8 +31,14 @@ func NewCertificate() *Certificate {
 
 // VerifyCertificate ensure a certificate file exists
 func (c Certificate) VerifyCertificate() {
-	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
-		log.Error(CertificateIsNeededMessage)
+	exists, err := afero.Exists(fs, c.Path)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if !exists {
+		log.Info(CertificateIsNeededMessage)
 		c.Watch()
 	}
 }
@@ -81,3 +77,13 @@ func (c Certificate) Watch() {
 		return
 	}
 }
+
+// CertificateIsNeededMessage is displayed when a cert.pem file cannot be found
+const (
+	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
+		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +
+		"\n 2. Obtain a certificate by visiting https://www.cloudflare.com/a/warp" +
+		"\n 3. Rename the certificate to `cert.pem` and move it to the volume" +
+		"\n\n See https://github.com/aschaper/hera#obtain-a-certificate for more info." +
+		"\n\n Hera is now watching for a `cert.pem` file and will resume operation when a certificate is found.\n"
+)
