@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -37,7 +38,7 @@ func (c Certificate) VerifyCertificate() error {
 	}
 
 	if !exists {
-		return err
+		return fmt.Errorf("%s not found", c.Path)
 	}
 
 	return nil
