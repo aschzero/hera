@@ -11,4 +11,5 @@ RUN mkdir /hera && mkdir /dist
 ADD ./hera /hera/
 WORKDIR /hera
 
+RUN go test
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /dist/hera
