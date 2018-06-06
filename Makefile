@@ -26,6 +26,9 @@ copy:
 run:
 	docker run --rm --name=$(NAME) --network=$(NAME) -v /var/run/docker.sock:/var/run/docker.sock -v $(shell pwd)/.cloudflared:/root/.cloudflared $(NAME):$(TAG)
 
+tunnel:
+	docker run --name=nginx --rm --label hera.hostname=$(HOSTNAME) --label hera.port=80 --network=hera nginx
+
 tag:
 	docker tag $(NAME):$(TAG) $(RELEASENAME):$(TAG)
 	docker tag $(NAME):$(TAG) $(RELEASENAME):latest
