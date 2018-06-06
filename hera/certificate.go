@@ -29,23 +29,22 @@ func NewCertificate() *Certificate {
 	return certificate
 }
 
-// VerifyCertificate ensure a certificate file exists
-func (c Certificate) VerifyCertificate() {
+// VerifyCertificate verifies the presence of a certificate
+func (c Certificate) VerifyCertificate() error {
 	exists, err := afero.Exists(fs, c.Path)
 	if err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 
 	if !exists {
-		log.Info(CertificateIsNeededMessage)
-		c.Watch()
+		return err
 	}
+
+	return nil
 }
 
-// Watch pauses Hera to wait until a certificate file exists.
-// Hera resumes when a certificate is found.
-func (c Certificate) Watch() {
+// Wait pauses Hera until a certificate file is found
+func (c Certificate) Wait() {
 	w := watcher.New()
 
 	w.SetMaxEvents(1)

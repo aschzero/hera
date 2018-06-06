@@ -24,7 +24,10 @@ func main() {
 	}
 
 	certificate := NewCertificate()
-	certificate.VerifyCertificate()
+	if err := certificate.VerifyCertificate(); err != nil {
+		log.Info(CertificateIsNeededMessage)
+		certificate.Wait()
+	}
 
 	hera.Listen()
 }
