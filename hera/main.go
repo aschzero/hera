@@ -1,6 +1,11 @@
 package main
 
-import "github.com/docker/docker/client"
+import (
+	"github.com/docker/docker/client"
+	"github.com/spf13/afero"
+)
+
+var fs = afero.NewOsFs()
 
 func main() {
 	InitLogger()

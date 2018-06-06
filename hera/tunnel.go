@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-var fs = afero.NewOsFs()
-
 // Tunnel holds tunnel metadata and configuration
 type Tunnel struct {
 	ContainerHostname string
@@ -21,7 +19,6 @@ type Tunnel struct {
 
 // TunnelConfig holds tunnel configuration
 type TunnelConfig struct {
-	fs                  afero.Fs
 	ServicePath         string
 	RunFilePath         string
 	S6ServicesPath      string
