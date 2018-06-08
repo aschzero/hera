@@ -10,7 +10,7 @@ var fs = afero.NewOsFs()
 func main() {
 	InitLogger()
 
-	log.Infof("\nHera v%s", CurrentVersion())
+	log.Infof("Hera v%s has started", CurrentVersion())
 
 	cli, err := client.NewClient("unix:///var/run/docker.sock", "v1.22", nil, nil)
 	if err != nil {

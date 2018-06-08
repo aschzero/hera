@@ -57,8 +57,8 @@ func NewTunnel(containerHostname string, heraHostname string, heraPort string) *
 
 // Start starts a tunnel
 func (t Tunnel) Start() error {
-	log.Infof("\nRegistering tunnel %s @ %s:%s", t.HeraHostname, t.ContainerHostname, t.HeraPort)
-	log.Infof("Logging to %s\n\n", t.TunnelConfig.LogFilePath)
+	log.Infof("Registering tunnel %s @ %s:%s", t.HeraHostname, t.ContainerHostname, t.HeraPort)
+	log.Infof("Logging to %s", t.TunnelConfig.LogFilePath)
 
 	if err := t.PrepareService(); err != nil {
 		return err
@@ -86,7 +86,7 @@ func (t Tunnel) Stop() {
 		return
 	}
 
-	log.Infof("\nStopped tunnel %s\n\n", t.HeraHostname)
+	log.Infof("Stopped tunnel %s", t.HeraHostname)
 }
 
 // PrepareService creates the tunnel service directory if it doesn't exist

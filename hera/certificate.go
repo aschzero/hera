@@ -56,7 +56,7 @@ func (c Certificate) Wait() {
 			select {
 			case event := <-w.Event:
 				if event.FileInfo.Name() == c.FileName {
-					log.Info("\n Found cloudflare certificate. Hera will now resume.\n")
+					log.Info("Found cloudflare certificate. Hera will now resume.\n")
 					w.Close()
 				}
 			case err := <-w.Error:
