@@ -6,7 +6,7 @@ TAG=`cat VERSION`
 
 default: build-all
 
-release: build tag push
+release: build-all tag push
 
 build-all: build copy build-image
 
