@@ -2,7 +2,7 @@
 
 ### Hera automates the creation of [Argo Tunnels](https://developers.cloudflare.com/argo-tunnel/) to easily and securely expose your local services to the outside world.
 
-Hera wants to make things a little bit easier for those who run multiple Dockerized services on their home network and want to access them anywhere without the use of port forwarding or other potentially insecure methods. Hera can also be used to manage tunnels as a VPN replacement or to expose local development environments.
+Hera is useful for those who run multiple Dockerized services on their home network and want to access them anywhere without the use of port forwarding or other potentially insecure methods. Hera can also be used to manage tunnels as a VPN replacement or to expose local development environments.
 
 Hera monitors the state of your configured services to instantly start a tunnel when the container starts. Tunnel processes are also monitored to ensure persistent connections and to restart them in the event of sudden disconnects or shutdowns. Hera also handles graceful shutdown of active tunnels should their respective containers stop running.
 
@@ -28,11 +28,12 @@ Hera monitors the state of your configured services to instantly start a tunnel 
 ----
 
 # Features
-* Monitors the state of your services for automated starting and stopping of tunnels.
+* Continuously monitors the state of your services for automated tunnel creation.
+* Revives tunnels on running containers when Hera is restarted.
 * Uses the s6 process supervisor to ensure active tunnel processes are kept alive.
 * Low memory footprint and high performance – services can be accessed through a tunnel within seconds.
 * Requires a minimal amount of configuration so you can get up and running quickly.
-* Extensive logging for all tunnel activity
+* Extensive logging for all tunnel activity.
 
 # How Hera Works
 Hera attaches to the Docker daemon to watch for changes in state of your configured containers. When a new container is started, Hera checks that it has the proper configuration as well as making sure the container can receive connections. If it passes the configuration checks, Hera spawns a new process to create a persistent tunnel connection.
@@ -150,15 +151,10 @@ After the container starts you should see similar output to the following in the
 ```
 $ docker logs -f hera
 
-[services.d] starting services
-[services.d] done.
-
-Hera v0.1.0
-Hera is listening...
-
-Registering tunnel my.domain.com @ 172.21.0.3:80
-Logging to /var/log/hera/my.domain.com.log
-
+[INFO] Hera v0.1.0 has started
+[INFO] Hera is listening
+[INFO] Registering tunnel my.domain.com @ 172.21.0.3:80
+[INFO] Logging to /var/log/hera/my.domain.com.log
 INFO[0000] Applied configuration from /etc/services.d/my.domain.com/config.yml
 INFO[0000] Proxying tunnel requests to http://172.21.0.3:80
 INFO[0000] Starting metrics server                       addr="127.0.0.1:45603"
@@ -178,6 +174,5 @@ $ docker logs -f hera
 INFO[0012] Quitting...
 INFO[0012] Metrics server stopped
 INFO[0043] Initiating graceful shutdown...
-
-Stopped tunnel my.domain.com
+[INFO] Stopped tunnel my.domain.com
 ```

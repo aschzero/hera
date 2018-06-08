@@ -10,15 +10,45 @@ import (
 	"github.com/docker/docker/client"
 )
 
-// Hera holds an instantiated Client and a map of active tunnels
+// Hera holds an instantiated Client and a map of registered tunnels
 type Hera struct {
-	Client        *client.Client
-	ActiveTunnels map[string]*Tunnel
+	Client            *client.Client
+	RegisteredTunnels map[string]*Tunnel
 }
 
-// Listen continuously listens for container start or die events.
+// Revive starts tunnels for containers already running
+func (h Hera) Revive() {
+	containers, err := h.Client.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for _, c := range containers {
+		container, err := NewContainer(h.Client, c.ID)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+
+		tunnel, err := container.TryTunnel()
+		if err != nil {
+			log.Infof("Ignoring %s: %s", container.ID, err)
+			continue
+		}
+
+		if err := tunnel.Start(); err != nil {
+			log.Errorf("Error starting tunnel: %s", err)
+			continue
+		}
+
+		h.RegisterTunnel(container.ID, tunnel)
+	}
+}
+
+// Listen continuously listens for container start or die events
 func (h Hera) Listen() {
-	log.Info("Hera is listening...\n\n")
+	log.Info("Hera is listening")
 
 	messages, errs := h.Client.Events(context.Background(), types.EventsOptions{})
 
@@ -45,46 +75,42 @@ func (h Hera) Listen() {
 	}
 }
 
-// HandleStartEvent checks for valid Hera configuration and creates a new
-// tunnel whenn applicable.
+// HandleStartEvent tries to start a tunnel for a new container
 func (h Hera) HandleStartEvent(event events.Message) {
-	container, err := NewContainerFromEvent(h.Client, event)
+	container, err := NewContainer(h.Client, event.ID)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	if err := container.VerifyLabelConfig(); err != nil {
+	tunnel, err := container.TryTunnel()
+	if err != nil {
 		log.Errorf("Ignoring container %s: %s", container.ID, err)
 		return
 	}
 
-	hostname, err := container.ResolveHostname()
-	if err != nil {
-		log.Errorf("Unable to resolve hostname %s for container %s. Ensure the container is accessible within Hera's network.", container.Hostname, container.ID)
+	if err := tunnel.Start(); err != nil {
+		log.Errorf("Error starting tunnel: %s", err)
 		return
 	}
 
-	heraHostname, _ := container.Labels["hera.hostname"]
-	heraPort, _ := container.Labels["hera.port"]
-	tunnel := NewTunnel(hostname, heraHostname, heraPort)
-	h.ActiveTunnels[container.ID] = tunnel
-
-	err = tunnel.Start()
-	if err != nil {
-		log.Errorf("Error starting tunnel: %s", err)
-	}
+	h.RegisterTunnel(container.ID, tunnel)
 }
 
-// HandleDieEvent stops a tunnel if it exists when a container is stopped.
+// HandleDieEvent tries to stop a tunnel when a container is stopped
 func (h Hera) HandleDieEvent(event events.Message) {
-	container, err := NewContainerFromEvent(h.Client, event)
+	container, err := NewContainer(h.Client, event.ID)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	if tunnel, ok := h.ActiveTunnels[container.ID]; ok {
+	if tunnel, ok := h.RegisteredTunnels[container.ID]; ok {
 		tunnel.Stop()
 	}
+}
+
+// RegisterTunnel stores a Tunnel in memory for later reference
+func (h Hera) RegisterTunnel(id string, tunnel *Tunnel) {
+	h.RegisteredTunnels[id] = tunnel
 }

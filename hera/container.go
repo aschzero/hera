@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/client"
 )
 
@@ -16,9 +15,9 @@ type Container struct {
 	Labels   map[string]string
 }
 
-// NewContainerFromEvent returns a Container from a given event message
-func NewContainerFromEvent(cli *client.Client, event events.Message) (*Container, error) {
-	res, err := cli.ContainerInspect(context.Background(), event.ID)
+// NewContainer returns a new Container from a given container ID
+func NewContainer(cli *client.Client, id string) (*Container, error) {
+	res, err := cli.ContainerInspect(context.Background(), id)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +31,26 @@ func NewContainerFromEvent(cli *client.Client, event events.Message) (*Container
 	return container, nil
 }
 
-// VerifyLabelConfig checks the presence of required labels
-func (c Container) VerifyLabelConfig() error {
+// TryTunnel returns a Tunnel if the container is correctly configured
+func (c Container) TryTunnel() (*Tunnel, error) {
+	if err := c.VerifyLabels(); err != nil {
+		return nil, err
+	}
+
+	hostname, err := c.ResolveHostname()
+	if err != nil {
+		return nil, err
+	}
+
+	heraHostname, _ := c.Labels["hera.hostname"]
+	heraPort, _ := c.Labels["hera.port"]
+	tunnel := NewTunnel(hostname, heraHostname, heraPort)
+
+	return tunnel, nil
+}
+
+// VerifyLabels checks the presence of required labels
+func (c Container) VerifyLabels() error {
 	required := []string{
 		"hera.hostname",
 		"hera.port",
@@ -41,7 +58,7 @@ func (c Container) VerifyLabelConfig() error {
 
 	for _, label := range required {
 		if _, ok := c.Labels[label]; !ok {
-			return fmt.Errorf("%s label not found", label)
+			return fmt.Errorf("missing labels")
 		}
 	}
 
@@ -52,7 +69,7 @@ func (c Container) VerifyLabelConfig() error {
 func (c Container) ResolveHostname() (string, error) {
 	resolved, err := net.LookupHost(c.Hostname)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to resolve hostname %s", resolved)
 	}
 
 	return resolved[0], nil
