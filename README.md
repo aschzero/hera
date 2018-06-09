@@ -6,10 +6,9 @@ Hera is useful for those who run multiple Dockerized services on their home netw
 
 Hera monitors the state of your configured services to instantly start a tunnel when the container starts. Tunnel processes are also monitored to ensure persistent connections and to restart them in the event of sudden disconnects or shutdowns. Hera also handles graceful shutdown of active tunnels should their respective containers stop running.
 
+[![Build Status](https://semaphoreci.com/api/v1/aschaper/hera/branches/master/badge.svg)](https://semaphoreci.com/aschaper/hera)
 [![](https://images.microbadger.com/badges/version/aschaper/hera.svg)](https://microbadger.com/images/aschaper/hera "Get your own version badge on microbadger.com")
-[![](https://images.microbadger.com/badges/image/aschaper/hera.svg)](https://microbadger.com/images/aschaper/hera "Get your own image badge on microbadger.com")
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aschaper/hera/blob/master/LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/aschaper/hera)](https://goreportcard.com/report/github.com/aschaper/hera)
 
 ----
 
