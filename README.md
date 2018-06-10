@@ -86,7 +86,7 @@ Here's an example of a container configured for Hera with the `docker run` comma
 docker run \
   --network=hera \
   -p 8080:80 \
-  --label hera.address=my.domain.com \
+  --label hera.hostname=my.domain.com \
   --label hera.port=80 \
   nginx
 ```
@@ -140,7 +140,7 @@ Now that Hera is up and running, let's run a small nginx container with the prop
 docker run \
   --network=hera \
   -p 8080:80 \
-  --label hera.address=my.domain.com \
+  --label hera.hostname=my.domain.com \
   --label hera.port=80 \
   nginx
 ```
