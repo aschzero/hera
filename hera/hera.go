@@ -33,7 +33,6 @@ func (h Hera) Revive() {
 
 		tunnel, err := container.TryTunnel()
 		if err != nil {
-			log.Infof("Ignoring %s: %s", container.ID, err)
 			continue
 		}
 
