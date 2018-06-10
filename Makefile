@@ -12,11 +12,9 @@ CGO_ENABLED=0
 
 default: build
 
-release: build tag push
+release: tag push
 
 build: build-binary-image build-binary build-image
-
-test: build-binary-image run-test
 
 build-binary-image:
 	docker build -t $(BUILD_IMAGE) -f build.Dockerfile .
@@ -27,7 +25,7 @@ build-binary:
 build-image:
 	docker build -t $(NAME):$(TAG) .
 
-run-test:
+test:
 	docker run --rm -it $(BUILD_IMAGE) go test -v
 
 run:
