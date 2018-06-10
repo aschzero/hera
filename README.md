@@ -175,3 +175,8 @@ INFO[0012] Metrics server stopped
 INFO[0043] Initiating graceful shutdown...
 [INFO] Stopped tunnel my.domain.com
 ```
+
+# Contributing
+
+* If you'd like to contribute to the project, refer to the [contributing documentation](https://github.com/aschaper/hera/blob/master/CONTRIBUTING.md).
+* Read the [Local Development](https://github.com/aschaper/hera/wiki/Local-Development) wiki for information on how to setup Hera for local development.
