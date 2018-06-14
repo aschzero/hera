@@ -1,7 +1,7 @@
 NAME=hera
 BUILD_IMAGE=$(NAME)-build
 COPY_CONTAINER=$(NAME)-copy
-RELEASE_NAME=aschaper/$(NAME)
+RELEASE_NAME=aschzero/$(NAME)
 TAG=`cat VERSION`
 PWD=$(shell pwd)
 

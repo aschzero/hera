@@ -1,4 +1,4 @@
-<img alt="Hera" src="https://s3-us-west-2.amazonaws.com/aschaper-hera/hera.png" width="500px">
+<img alt="Hera" src="https://s3-us-west-2.amazonaws.com/aschzero-hera/hera.png" width="500px">
 
 ### Hera automates the creation of [Argo Tunnels](https://developers.cloudflare.com/argo-tunnel/) to easily and securely expose your local services to the outside world.
 
@@ -6,9 +6,9 @@ Hera is useful for those who run multiple Dockerized services on their home netw
 
 Hera monitors the state of your configured services to instantly start a tunnel when the container starts. Tunnel processes are also monitored to ensure persistent connections and to restart them in the event of sudden disconnects or shutdowns. Hera also handles graceful shutdown of active tunnels should their respective containers stop running.
 
-[![Build Status](https://semaphoreci.com/api/v1/aschaper/hera/branches/master/badge.svg)](https://semaphoreci.com/aschaper/hera)
-[![](https://images.microbadger.com/badges/version/aschaper/hera.svg)](https://microbadger.com/images/aschaper/hera "Get your own version badge on microbadger.com")
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aschaper/hera/blob/master/LICENSE)
+[![Build Status](https://semaphoreci.com/api/v1/aschzero/hera/branches/master/badge.svg)](https://semaphoreci.com/aschzero/hera)
+[![](https://images.microbadger.com/badges/version/aschzero/hera.svg)](https://microbadger.com/images/aschzero/hera "Get your own version badge on microbadger.com")
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aschzero/hera/blob/master/LICENSE)
 
 ----
 
@@ -105,7 +105,7 @@ docker run \
   --network=hera \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /path/to/cert:/root/.cloudflared \
-  aschaper/hera:latest
+  aschzero/hera:latest
 ```
 
 ## Required Volumes
@@ -124,7 +124,7 @@ docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /path/to/cert:/root/.cloudflared \
   -v /path/to/logs:/var/log/hera \
-  aschaper/hera:latest
+  aschzero/hera:latest
 ```
 
 * The Hera log file can be found at `/var/log/hera/hera.log`
@@ -197,5 +197,5 @@ INFO[0043] Initiating graceful shutdown...
 
 # Contributing
 
-* If you'd like to contribute to the project, refer to the [contributing documentation](https://github.com/aschaper/hera/blob/master/CONTRIBUTING.md).
-* Read the [Local Development](https://github.com/aschaper/hera/wiki/Local-Development) wiki for information on how to setup Hera for local development.
+* If you'd like to contribute to the project, refer to the [contributing documentation](https://github.com/aschzero/hera/blob/master/CONTRIBUTING.md).
+* Read the [Local Development](https://github.com/aschzero/hera/wiki/Local-Development) wiki for information on how to setup Hera for local development.

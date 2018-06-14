@@ -14,11 +14,11 @@ When submitting a pull request:
 
 #### Continuous Integration
 
-Hera uses [Semaphore](https://semaphoreci.com/aschaper/hera) to build pull requests. Ensure the build for your PR succeeds and that the tests pass.
+Hera uses [Semaphore](https://semaphoreci.com/aschzero/hera) to build pull requests. Ensure the build for your PR succeeds and that the tests pass.
 
 ## Reporting Bugs
 
-Report your bug by creating a [new issue](https://github.com/aschaper/hera/issues) in this repository.
+Report your bug by creating a [new issue](https://github.com/aschzero/hera/issues) in this repository.
 
 ### Be Descriptive
 
@@ -37,4 +37,4 @@ Run [golint](https://github.com/golang/lint) against your code until it reports 
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under its [MIT License](https://github.com/aschaper/hera/blob/master/LICENSE).
+By contributing, you agree that your contributions will be licensed under its [MIT License](https://github.com/aschzero/hera/blob/master/LICENSE).
