@@ -25,7 +25,7 @@ func main() {
 
 	certificate := NewCertificate()
 	if err := certificate.VerifyCertificate(); err != nil {
-		log.Info(CertificateIsNeededMessage)
+		log.Error(CertificateIsNeededMessage)
 		certificate.Wait()
 	}
 

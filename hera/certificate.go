@@ -60,7 +60,7 @@ func (c Certificate) Wait() {
 					w.Close()
 				}
 			case err := <-w.Error:
-				log.Fatal(err)
+				log.Info(err)
 			case <-w.Closed:
 				return
 			}
@@ -68,8 +68,7 @@ func (c Certificate) Wait() {
 	}()
 
 	if err := w.Add(c.Directory); err != nil {
-		log.Fatal(err)
-		return
+		log.Error(err)
 	}
 
 	if err := w.Start(time.Millisecond * 500); err != nil {

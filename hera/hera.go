@@ -84,7 +84,7 @@ func (h Hera) HandleStartEvent(event events.Message) {
 
 	tunnel, err := container.TryTunnel()
 	if err != nil {
-		log.Errorf("Ignoring container %s: %s", container.ID, err)
+		log.Infof("Ignoring container %s: %s", container.ID, err)
 		return
 	}
 
