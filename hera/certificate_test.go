@@ -51,3 +51,22 @@ func TestIsExist(t *testing.T) {
 		t.Error("Certificate file does not exist")
 	}
 }
+
+func TestMatchesDomain(t *testing.T) {
+	cert := NewCertificate("hostname.com.pem")
+
+	matches := cert.matchesDomain("hostname.com")
+	if !matches {
+		t.Errorf("Expected cert and domain names to match")
+	}
+
+	matches = cert.matchesDomain("sub.hostname.com")
+	if !matches {
+		t.Errorf("Expected cert and domain names to match")
+	}
+
+	matches = cert.matchesDomain("horsename.com")
+	if matches {
+		t.Errorf("Expected cert and domain names to not match")
+	}
+}

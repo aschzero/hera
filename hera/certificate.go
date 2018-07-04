@@ -3,7 +3,9 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
+	tld "github.com/jpillora/go-tld"
 	"github.com/spf13/afero"
 )
 
@@ -61,6 +63,22 @@ func (c Certificate) isExist() bool {
 	}
 
 	return exists
+}
+
+func (c Certificate) matchesDomain(domain string) bool {
+	baseCertName := strings.Split(c.Name, ".pem")[0]
+
+	if !strings.HasPrefix(domain, "http") {
+		domain = "https://" + domain
+	}
+
+	parsed, err := tld.Parse(domain)
+	if err != nil {
+		return false
+	}
+
+	baseDomain := parsed.Domain + "." + parsed.TLD
+	return baseDomain == baseCertName
 }
 
 const (
