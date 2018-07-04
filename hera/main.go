@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/docker/docker/client"
 	"github.com/spf13/afero"
 )
 
@@ -12,14 +11,14 @@ func main() {
 
 	log.Infof("Hera v%s has started", CurrentVersion())
 
-	cli, err := client.NewClient("unix:///var/run/docker.sock", "v1.22", nil, nil)
+	client, err := NewClient()
 	if err != nil {
 		log.Errorf("Error connecting to the Docker daemon: %s", err)
 		return
 	}
 
 	hera := &Hera{
-		Client:            cli,
+		Client:            client,
 		RegisteredTunnels: make(map[string]*Tunnel),
 	}
 

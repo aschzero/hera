@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-
-	"github.com/docker/docker/client"
 )
 
 type Container struct {
@@ -15,8 +13,8 @@ type Container struct {
 	Labels   map[string]string
 }
 
-func NewContainer(cli *client.Client, id string) (*Container, error) {
-	res, err := cli.ContainerInspect(context.Background(), id)
+func NewContainer(client *Client, id string) (*Container, error) {
+	res, err := client.Docker.ContainerInspect(context.Background(), id)
 	if err != nil {
 		return nil, err
 	}

@@ -7,12 +7,11 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/client"
 )
 
 // Hera holds an instantiated Client and a map of registered tunnels
 type Hera struct {
-	Client            *client.Client
+	Client            *Client
 	RegisteredTunnels map[string]*Tunnel
 }
 
@@ -37,7 +36,7 @@ func (h Hera) CheckCertificates() {
 
 // Revive starts tunnels for containers already running
 func (h Hera) Revive() {
-	containers, err := h.Client.ContainerList(context.Background(), types.ContainerListOptions{})
+	containers, err := h.Client.Docker.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		log.Error(err)
 		return
@@ -68,7 +67,7 @@ func (h Hera) Revive() {
 func (h Hera) Listen() {
 	log.Info("Hera is listening")
 
-	messages, errs := h.Client.Events(context.Background(), types.EventsOptions{})
+	messages, errs := h.Client.Docker.Events(context.Background(), types.EventsOptions{})
 
 	for {
 		select {
