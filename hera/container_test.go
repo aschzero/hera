@@ -8,7 +8,7 @@ import (
 
 var container = &Container{
 	ID:       "f5020368c5bf",
-	Hostname: "hostname",
+	Hostname: "hostname.com",
 	Labels:   map[string]string{},
 }
 
@@ -54,65 +54,51 @@ func TestGetPort(t *testing.T) {
 	}
 }
 
-func TestGetCertificateUsesDefaultCert(t *testing.T) {
-	cert, err := container.getCertificate()
-	if err != nil {
-		t.Error(err)
-	}
+func TestGetCertificate(t *testing.T) {
+	fs = afero.NewMemMapFs()
+	cert := NewCertificate(container.Hostname)
 
-	if cert == nil {
-		t.Error("Expected certificate")
-	}
-}
+	fs.Create(cert.fullPath())
 
-func TestGetCertificateNonexistent(t *testing.T) {
-	certname := "mysite.com.pem"
 	container.Labels = map[string]string{
-		"hera.certificate": certname,
+		"hera.hostname": container.Hostname,
 	}
 
-	_, err := container.getCertificate()
-	if err == nil {
-		t.Error("want error")
+	foundCert, err := container.getCertificate()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if foundCert == nil {
+		t.Error("Expected to find certificate")
 	}
 }
 
-func TestGetCertificateExistingCustom(t *testing.T) {
-	certname := "mysite.com.pem"
-	cert := NewCertificate(certname)
-	err := afero.WriteFile(fs, cert.fullPath(), []byte(""), 0644)
+func TestGetRootHost(t *testing.T) {
+	hostname := "mydomain.com"
+	container.Labels = map[string]string{
+		"hera.hostname": hostname,
+	}
+
+	root, err := container.getRootHost()
 	if err != nil {
 		t.Error(err)
 	}
 
-	foundcert, err := container.getCertificate()
-	if err != nil {
-		t.Error(err)
-	}
-
-	if foundcert.Name != certname {
-		t.Errorf("Unexpected certificate name: %s", foundcert.Name)
-	}
-}
-
-func TestGetCertificateMatchesOnHostname(t *testing.T) {
-	certname := "mysite.com.pem"
-	cert := NewCertificate(certname)
-	err := afero.WriteFile(fs, cert.fullPath(), []byte(""), 0644)
-	if err != nil {
-		t.Error(err)
+	if root != hostname {
+		t.Errorf("Unexpected root host: %s", root)
 	}
 
 	container.Labels = map[string]string{
-		"hera.hostname": "mysite.com",
+		"hera.hostname": "sub.mysite.co.uk",
 	}
 
-	foundcert, err := container.getCertificate()
+	root, err = container.getRootHost()
 	if err != nil {
 		t.Error(err)
 	}
 
-	if foundcert == nil {
-		t.Errorf("Unexpected nil certificate")
+	if root != "mysite.co.uk" {
+		t.Errorf("Unexpected root host: %s", root)
 	}
 }

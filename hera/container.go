@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
+
+	tld "github.com/jpillora/go-tld"
 )
 
 type Container struct {
@@ -82,25 +85,35 @@ func (c Container) getPort() (string, error) {
 }
 
 func (c Container) getCertificate() (*Certificate, error) {
-	name, _ := c.Labels["hera.certificate"]
-	cert := NewCertificate(name)
-
-	if cert.isExist() {
-		return cert, nil
-	}
-
-	hostname, _ := c.getHostname()
-	config := NewCertificateConfig()
-	certs, err := config.scan()
+	certConfig := NewCertificateConfig()
+	rootHostname, err := c.getRootHost()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to find matching certificate %s: %s", err, cert.fullPath())
+		return nil, err
 	}
 
-	for _, cert := range certs {
-		if cert.matchesDomain(hostname) {
-			return cert, nil
-		}
+	cert, err := certConfig.findMatchingCertificate(rootHostname)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("Unable to find matching certificate: %s", cert.fullPath())
+	return cert, nil
+}
+
+func (c Container) getRootHost() (string, error) {
+	hostname, err := c.getHostname()
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasPrefix(hostname, "http") {
+		hostname = "https://" + hostname
+	}
+
+	parsed, err := tld.Parse(hostname)
+	if err != nil {
+		return "", err
+	}
+
+	root := parsed.Domain + "." + parsed.TLD
+	return root, nil
 }
