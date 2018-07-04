@@ -85,9 +85,22 @@ func (c Container) getCertificate() (*Certificate, error) {
 	name, _ := c.Labels["hera.certificate"]
 	cert := NewCertificate(name)
 
-	if !cert.isExist() {
-		return nil, fmt.Errorf("Unable to find certificate at %s", cert.fullPath())
+	if cert.isExist() {
+		return cert, nil
 	}
 
-	return cert, nil
+	hostname, _ := c.getHostname()
+	config := NewCertificateConfig()
+	certs, err := config.scan()
+	if err != nil {
+		return nil, fmt.Errorf("Unable to find matching certificate %s: %s", err, cert.fullPath())
+	}
+
+	for _, cert := range certs {
+		if cert.matchesDomain(hostname) {
+			return cert, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Unable to find matching certificate: %s", cert.fullPath())
 }

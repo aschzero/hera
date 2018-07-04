@@ -94,3 +94,25 @@ func TestGetCertificateExistingCustom(t *testing.T) {
 		t.Errorf("Unexpected certificate name: %s", foundcert.Name)
 	}
 }
+
+func TestGetCertificateMatchesOnHostname(t *testing.T) {
+	certname := "mysite.com.pem"
+	cert := NewCertificate(certname)
+	err := afero.WriteFile(fs, cert.fullPath(), []byte(""), 0644)
+	if err != nil {
+		t.Error(err)
+	}
+
+	container.Labels = map[string]string{
+		"hera.hostname": "mysite.com",
+	}
+
+	foundcert, err := container.getCertificate()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if foundcert == nil {
+		t.Errorf("Unexpected nil certificate")
+	}
+}

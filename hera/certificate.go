@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -43,10 +42,17 @@ func NewCertificate(name string) *Certificate {
 	return cert
 }
 
-func (c CertificateConfig) scan() ([]os.FileInfo, error) {
-	certs, err := afero.ReadDir(fs, c.Path)
+func (c CertificateConfig) scan() ([]*Certificate, error) {
+	var certs []*Certificate
+
+	files, err := afero.ReadDir(fs, c.Path)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, file := range files {
+		cert := NewCertificate(file.Name())
+		certs = append(certs, cert)
 	}
 
 	return certs, nil

@@ -30,7 +30,7 @@ func (h Hera) CheckCertificates() {
 	}
 
 	for _, cert := range certs {
-		log.Infof("Found certificate: %s", cert.Name())
+		log.Infof("Found certificate: %s", cert.Name)
 	}
 }
 
