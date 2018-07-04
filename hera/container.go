@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"strings"
 
@@ -23,7 +22,7 @@ func NewContainer(client *Client, id string) (*Container, error) {
 	}
 
 	container := &Container{
-		ID:       res.ID,
+		ID:       res.ID[0:12],
 		Hostname: res.Config.Hostname,
 		Labels:   res.Config.Labels,
 	}
