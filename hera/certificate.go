@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
-	tld "github.com/jpillora/go-tld"
 	"github.com/spf13/afero"
 )
 
@@ -14,14 +14,12 @@ type Certificate struct {
 }
 
 type CertificateConfig struct {
-	Path        string
-	DefaultName string
+	Path string
 }
 
 func NewCertificateConfig() *CertificateConfig {
 	config := &CertificateConfig{
-		Path:        "/root/.cloudflared",
-		DefaultName: "cert.pem",
+		Path: "/root/.cloudflared",
 	}
 
 	return config
@@ -29,10 +27,6 @@ func NewCertificateConfig() *CertificateConfig {
 
 func NewCertificate(name string) *Certificate {
 	config := NewCertificateConfig()
-
-	if name == "" {
-		name = config.DefaultName
-	}
 
 	cert := &Certificate{
 		Name:              name,
@@ -42,7 +36,18 @@ func NewCertificate(name string) *Certificate {
 	return cert
 }
 
-func (c CertificateConfig) scan() ([]*Certificate, error) {
+func NewDefaultCertificate() *Certificate {
+	config := NewCertificateConfig()
+
+	cert := &Certificate{
+		Name:              "cert.pem",
+		CertificateConfig: config,
+	}
+
+	return cert
+}
+
+func (c CertificateConfig) scanAll() ([]*Certificate, error) {
 	var certs []*Certificate
 
 	files, err := afero.ReadDir(fs, c.Path)
@@ -58,6 +63,34 @@ func (c CertificateConfig) scan() ([]*Certificate, error) {
 	return certs, nil
 }
 
+func (c CertificateConfig) findMatchingCertificate(hostname string) (*Certificate, error) {
+	certs, err := c.scanAll()
+	if err != nil {
+		return nil, fmt.Errorf("Unable to scan for available certificates: %s", err)
+	}
+
+	for _, cert := range certs {
+		if cert.belongsToHost(hostname) {
+			return cert, nil
+		}
+	}
+
+	defaultCert := NewDefaultCertificate()
+	log.Infof("Trying `%s` as a fallback", defaultCert.fullPath())
+
+	if !defaultCert.isExist() {
+		return nil, fmt.Errorf("Couldn't find certificate. Tried searching for both `%s` and `%s`", hostname, defaultCert.Name)
+	}
+
+	return defaultCert, nil
+}
+
+func (c Certificate) belongsToHost(host string) bool {
+	baseCertName := strings.Split(c.Name, ".pem")[0]
+
+	return host == baseCertName
+}
+
 func (c Certificate) fullPath() string {
 	return filepath.Join(c.CertificateConfig.Path, c.Name)
 }
@@ -69,22 +102,6 @@ func (c Certificate) isExist() bool {
 	}
 
 	return exists
-}
-
-func (c Certificate) matchesDomain(domain string) bool {
-	baseCertName := strings.Split(c.Name, ".pem")[0]
-
-	if !strings.HasPrefix(domain, "http") {
-		domain = "https://" + domain
-	}
-
-	parsed, err := tld.Parse(domain)
-	if err != nil {
-		return false
-	}
-
-	baseDomain := parsed.Domain + "." + parsed.TLD
-	return baseDomain == baseCertName
 }
 
 const (

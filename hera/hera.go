@@ -18,7 +18,7 @@ type Hera struct {
 // CheckCertificates verifies the presence of at least one cert file
 func (h Hera) CheckCertificates() {
 	certificateConfig := NewCertificateConfig()
-	certs, err := certificateConfig.scan()
+	certs, err := certificateConfig.scanAll()
 	if err != nil {
 		log.Errorf("Error while checking certificates: %s", err)
 		return
