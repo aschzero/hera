@@ -60,7 +60,7 @@ func (c Container) tryTunnel() (*Tunnel, error) {
 func (c Container) resolveHostname() (string, error) {
 	resolved, err := net.LookupHost(c.Hostname)
 	if err != nil {
-		return "", fmt.Errorf("unable to resolve hostname %s", c.Hostname)
+		return "", errors.New("unable to resolve hostname")
 	}
 
 	return resolved[0], nil

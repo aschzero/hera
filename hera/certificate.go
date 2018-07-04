@@ -76,10 +76,10 @@ func (c CertificateConfig) findMatchingCertificate(hostname string) (*Certificat
 	}
 
 	defaultCert := NewDefaultCertificate()
-	log.Infof("Trying `%s` as a fallback", defaultCert.fullPath())
+	log.Infof("Unable to find `%s.pem`, trying `%s` as a fallback.", hostname, defaultCert.fullPath())
 
 	if !defaultCert.isExist() {
-		return nil, fmt.Errorf("Couldn't find certificate. Tried searching for both `%s` and `%s`", hostname, defaultCert.Name)
+		return nil, fmt.Errorf("Couldn't find certificate. Tried searching for both `%s`.pem and `%s`", hostname, defaultCert.Name)
 	}
 
 	return defaultCert, nil
@@ -108,7 +108,6 @@ const (
 	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
 		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +
 		"\n 2. Obtain a certificate by visiting https://www.cloudflare.com/a/warp" +
-		"\n 3. Rename the certificate to `cert.pem` and move it to the volume" +
-		"\n\n See https://github.com/aschzero/hera#obtain-a-certificate for more info." +
-		"\n\n Hera is now watching for a `cert.pem` file and will resume operation when a certificate is found.\n"
+		"\n 3. Rename the certificate to your hostname (e.g.: `mysite.com`) and move it to the volume" +
+		"\n\n See https://github.com/aschzero/hera#obtain-a-certificate for more info.\n"
 )
