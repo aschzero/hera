@@ -26,7 +26,7 @@ build-image:
 	docker build -t $(NAME):$(TAG) .
 
 test:
-	docker run --rm -it $(BUILD_IMAGE) go test -v
+	docker run --rm -v $(PWD)/hera:/hera -w /hera $(BUILD_IMAGE) go test -v
 
 run:
 	docker run --rm --name=$(NAME) --network=$(NAME) -v /var/run/docker.sock:/var/run/docker.sock -v $(PWD)/.cloudflared:/root/.cloudflared $(NAME):$(TAG)
