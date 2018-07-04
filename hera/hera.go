@@ -16,6 +16,25 @@ type Hera struct {
 	RegisteredTunnels map[string]*Tunnel
 }
 
+// CheckCertificates verifies the presence of at least one cert file
+func (h Hera) CheckCertificates() {
+	certificateConfig := NewCertificateConfig()
+	certs, err := certificateConfig.scan()
+	if err != nil {
+		log.Errorf("Error while checking certificates: %s", err)
+		return
+	}
+
+	if len(certs) == 0 {
+		log.Error(CertificateIsNeededMessage)
+		return
+	}
+
+	for _, cert := range certs {
+		log.Infof("Found certificate: %s", cert.Name())
+	}
+}
+
 // Revive starts tunnels for containers already running
 func (h Hera) Revive() {
 	containers, err := h.Client.ContainerList(context.Background(), types.ContainerListOptions{})
@@ -31,12 +50,12 @@ func (h Hera) Revive() {
 			continue
 		}
 
-		tunnel, err := container.TryTunnel()
+		tunnel, err := container.tryTunnel()
 		if err != nil {
 			continue
 		}
 
-		if err := tunnel.Start(); err != nil {
+		if err := tunnel.start(); err != nil {
 			log.Errorf("Error starting tunnel: %s", err)
 			continue
 		}
@@ -82,13 +101,13 @@ func (h Hera) HandleStartEvent(event events.Message) {
 		return
 	}
 
-	tunnel, err := container.TryTunnel()
+	tunnel, err := container.tryTunnel()
 	if err != nil {
 		log.Infof("Ignoring container %s: %s", container.ID, err)
 		return
 	}
 
-	if err := tunnel.Start(); err != nil {
+	if err := tunnel.start(); err != nil {
 		log.Errorf("Error starting tunnel: %s", err)
 		return
 	}
@@ -105,7 +124,7 @@ func (h Hera) HandleDieEvent(event events.Message) {
 	}
 
 	if tunnel, ok := h.RegisteredTunnels[container.ID]; ok {
-		tunnel.Stop()
+		tunnel.stop()
 	}
 }
 

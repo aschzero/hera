@@ -2,20 +2,19 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 
 	"github.com/docker/docker/client"
 )
 
-// Container holds only the container info we care about
 type Container struct {
 	ID       string
 	Hostname string
 	Labels   map[string]string
 }
 
-// NewContainer returns a new Container from a given container ID
 func NewContainer(cli *client.Client, id string) (*Container, error) {
 	res, err := cli.ContainerInspect(context.Background(), id)
 	if err != nil {
@@ -31,46 +30,66 @@ func NewContainer(cli *client.Client, id string) (*Container, error) {
 	return container, nil
 }
 
-// TryTunnel returns a Tunnel if the container is correctly configured
-func (c Container) TryTunnel() (*Tunnel, error) {
-	if err := c.VerifyLabels(); err != nil {
-		return nil, err
-	}
-
-	hostname, err := c.ResolveHostname()
+func (c Container) tryTunnel() (*Tunnel, error) {
+	address, err := c.resolveHostname()
 	if err != nil {
 		return nil, err
 	}
 
-	heraHostname, _ := c.Labels["hera.hostname"]
-	heraPort, _ := c.Labels["hera.port"]
-	tunnel := NewTunnel(hostname, heraHostname, heraPort)
+	hostname, err := c.getHostname()
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := c.getPort()
+	if err != nil {
+		return nil, err
+	}
+
+	cert, err := c.getCertificate()
+	if err != nil {
+		return nil, err
+	}
+
+	tunnel := NewTunnel(address, hostname, port, cert)
 
 	return tunnel, nil
 }
 
-// VerifyLabels checks the presence of required labels
-func (c Container) VerifyLabels() error {
-	required := []string{
-		"hera.hostname",
-		"hera.port",
-	}
-
-	for _, label := range required {
-		if _, ok := c.Labels[label]; !ok {
-			return fmt.Errorf("missing labels")
-		}
-	}
-
-	return nil
-}
-
-// ResolveHostname resolves the container hostname to an address.
-func (c Container) ResolveHostname() (string, error) {
+func (c Container) resolveHostname() (string, error) {
 	resolved, err := net.LookupHost(c.Hostname)
 	if err != nil {
-		return "", fmt.Errorf("unable to resolve hostname %s", resolved)
+		return "", fmt.Errorf("unable to resolve hostname %s", c.Hostname)
 	}
 
 	return resolved[0], nil
+}
+
+func (c Container) getHostname() (string, error) {
+	hostname, ok := c.Labels["hera.hostname"]
+	if !ok || hostname == "" {
+		return "", errors.New("No hera.hostname label")
+	}
+
+	return hostname, nil
+}
+
+func (c Container) getPort() (string, error) {
+	port, ok := c.Labels["hera.port"]
+	if !ok || port == "" {
+		return "", errors.New("No hera.port label")
+	}
+
+	return port, nil
+}
+
+func (c Container) getCertificate() (*Certificate, error) {
+	name, _ := c.Labels["hera.certificate"]
+	cert := NewCertificate(name)
+
+	if !cert.isExist() {
+		return nil, fmt.Errorf("Unable to find certificate at %s", cert.fullPath())
+	}
+
+	return cert, nil
 }

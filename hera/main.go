@@ -23,13 +23,7 @@ func main() {
 		RegisteredTunnels: make(map[string]*Tunnel),
 	}
 
-	certificate := NewCertificate()
-	if err := certificate.VerifyCertificate(); err != nil {
-		log.Error(CertificateIsNeededMessage)
-		certificate.Wait()
-	}
-
+	hera.CheckCertificates()
 	hera.Revive()
-
 	hera.Listen()
 }

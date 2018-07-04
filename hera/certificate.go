@@ -1,83 +1,68 @@
 package main
 
 import (
-	"fmt"
+	"os"
 	"path/filepath"
-	"time"
 
-	"github.com/radovskyb/watcher"
 	"github.com/spf13/afero"
 )
 
-// Certificate holds metadata of the cert.pem file
 type Certificate struct {
-	Directory string
-	FileName  string
-	Path      string
+	Name              string
+	CertificateConfig *CertificateConfig
 }
 
-// NewCertificate returns a Certificate with default metadata
-func NewCertificate() *Certificate {
-	dir := "/root/.cloudflared"
-	name := "cert.pem"
+type CertificateConfig struct {
+	Path        string
+	DefaultName string
+}
 
-	certificate := &Certificate{
-		Directory: dir,
-		FileName:  name,
-		Path:      filepath.Join(dir, name),
+func NewCertificateConfig() *CertificateConfig {
+	config := &CertificateConfig{
+		Path:        "/root/.cloudflared",
+		DefaultName: "cert.pem",
 	}
 
-	return certificate
+	return config
 }
 
-// VerifyCertificate verifies the presence of a certificate
-func (c Certificate) VerifyCertificate() error {
-	exists, err := afero.Exists(fs, c.Path)
+func NewCertificate(name string) *Certificate {
+	config := NewCertificateConfig()
+
+	if name == "" {
+		name = config.DefaultName
+	}
+
+	cert := &Certificate{
+		Name:              name,
+		CertificateConfig: config,
+	}
+
+	return cert
+}
+
+func (c CertificateConfig) scan() ([]os.FileInfo, error) {
+	certs, err := afero.ReadDir(fs, c.Path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if !exists {
-		return fmt.Errorf("%s not found", c.Path)
-	}
-
-	return nil
+	return certs, nil
 }
 
-// Wait pauses Hera until a certificate file is found
-func (c Certificate) Wait() {
-	w := watcher.New()
+func (c Certificate) fullPath() string {
+	return filepath.Join(c.CertificateConfig.Path, c.Name)
+}
 
-	w.SetMaxEvents(1)
-	w.FilterOps(watcher.Create)
-
-	go func() {
-		for {
-			select {
-			case event := <-w.Event:
-				if event.FileInfo.Name() == c.FileName {
-					log.Info("Found cloudflare certificate. Hera will now resume.\n")
-					w.Close()
-				}
-			case err := <-w.Error:
-				log.Info(err)
-			case <-w.Closed:
-				return
-			}
-		}
-	}()
-
-	if err := w.Add(c.Directory); err != nil {
+func (c Certificate) isExist() bool {
+	exists, err := afero.Exists(fs, c.fullPath())
+	if err != nil {
 		log.Error(err)
 	}
 
-	if err := w.Start(time.Millisecond * 500); err != nil {
-		log.Fatal(err)
-		return
-	}
+	return exists
 }
 
-// CertificateIsNeededMessage is displayed when a cert.pem file cannot be found
 const (
 	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
 		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +

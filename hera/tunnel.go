@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 )
@@ -14,6 +15,7 @@ type Tunnel struct {
 	ContainerHostname string
 	HeraHostname      string
 	HeraPort          string
+	Certificate       *Certificate
 	TunnelConfig      *TunnelConfig
 }
 
@@ -27,8 +29,7 @@ type TunnelConfig struct {
 	LogFilePath         string
 }
 
-// NewTunnel returns a Tunnel with the necessary metadata and configuration
-func NewTunnel(containerHostname string, heraHostname string, heraPort string) *Tunnel {
+func NewTunnelConfig(heraHostname string) *TunnelConfig {
 	servicePath := filepath.Join("/etc/services.d", heraHostname)
 	runFilePath := filepath.Join(servicePath, "run")
 	s6ServicesPath := "/var/run/s6/services"
@@ -45,42 +46,47 @@ func NewTunnel(containerHostname string, heraHostname string, heraPort string) *
 		LogFilePath:         logFilePath,
 	}
 
+	return tunnelConfig
+}
+
+func NewTunnel(containerHostname string, heraHostname string, heraPort string, certificate *Certificate) *Tunnel {
+	tunnelConfig := NewTunnelConfig(heraHostname)
+
 	tunnel := &Tunnel{
 		ContainerHostname: containerHostname,
 		HeraHostname:      heraHostname,
 		HeraPort:          heraPort,
+		Certificate:       certificate,
 		TunnelConfig:      tunnelConfig,
 	}
 
 	return tunnel
 }
 
-// Start starts a tunnel
-func (t Tunnel) Start() error {
+func (t Tunnel) start() error {
 	log.Infof("Registering tunnel %s @ %s:%s", t.HeraHostname, t.ContainerHostname, t.HeraPort)
 	log.Infof("Logging to %s", t.TunnelConfig.LogFilePath)
 
-	if err := t.PrepareService(); err != nil {
+	if err := t.prepareService(); err != nil {
 		return err
 	}
 
-	if err := t.GenerateConfigFile(); err != nil {
+	if err := t.generateConfigFile(); err != nil {
 		return err
 	}
 
-	if err := t.GenerateRunFile(); err != nil {
+	if err := t.generateRunFile(); err != nil {
 		return err
 	}
 
-	if err := t.StartService(); err != nil {
+	if err := t.startService(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Stop stops a tunnel
-func (t Tunnel) Stop() {
+func (t Tunnel) stop() {
 	if err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Run(); err != nil {
 		log.Errorf("Error while stopping tunnel %s: %s", t.HeraHostname, err)
 		return
@@ -89,8 +95,7 @@ func (t Tunnel) Stop() {
 	log.Infof("Stopped tunnel %s", t.HeraHostname)
 }
 
-// PrepareService creates the tunnel service directory if it doesn't exist
-func (t Tunnel) PrepareService() error {
+func (t Tunnel) prepareService() error {
 	exists, err := afero.DirExists(fs, t.TunnelConfig.ServicePath)
 	if err != nil {
 		return err
@@ -103,9 +108,15 @@ func (t Tunnel) PrepareService() error {
 	return nil
 }
 
-// GenerateConfigFile generates a new cloudflared config file
-func (t Tunnel) GenerateConfigFile() error {
-	config := fmt.Sprintf("hostname: %s\nurl: %s:%s\nlogfile: %s", t.HeraHostname, t.ContainerHostname, t.HeraPort, t.TunnelConfig.LogFilePath)
+func (t Tunnel) generateConfigFile() error {
+	configLines := []string{
+		"hostname: %s",
+		"url: %s:%s",
+		"logfile: %s",
+		"origincert: %s",
+	}
+
+	config := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.HeraHostname, t.ContainerHostname, t.HeraPort, t.TunnelConfig.LogFilePath, t.Certificate.fullPath())
 
 	if err := afero.WriteFile(fs, t.TunnelConfig.ConfigFilePath, []byte(config), 0644); err != nil {
 		return err
@@ -114,9 +125,7 @@ func (t Tunnel) GenerateConfigFile() error {
 	return nil
 }
 
-// GenerateRunFile generates the tunnel service run file with
-// the necessary permissions.
-func (t Tunnel) GenerateRunFile() error {
+func (t Tunnel) generateRunFile() error {
 	run := fmt.Sprintf("#!/usr/bin/with-contenv sh\nexec cloudflared --config %s", t.TunnelConfig.ConfigFilePath)
 
 	if err := afero.WriteFile(fs, t.TunnelConfig.RunFilePath, []byte(run), os.ModePerm); err != nil {
@@ -126,8 +135,7 @@ func (t Tunnel) GenerateRunFile() error {
 	return nil
 }
 
-// StartService starts the tunnel service
-func (t Tunnel) StartService() error {
+func (t Tunnel) startService() error {
 	exists, err := afero.Exists(fs, t.TunnelConfig.S6TunnelServicePath)
 	if err != nil {
 		return err
