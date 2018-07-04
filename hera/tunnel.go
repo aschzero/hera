@@ -114,6 +114,7 @@ func (t Tunnel) generateConfigFile() error {
 		"url: %s:%s",
 		"logfile: %s",
 		"origincert: %s",
+		"no-autoupdate: true",
 	}
 
 	config := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.HeraHostname, t.ContainerHostname, t.HeraPort, t.TunnelConfig.LogFilePath, t.Certificate.fullPath())
