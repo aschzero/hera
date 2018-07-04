@@ -19,12 +19,7 @@ type Hera struct {
 func (h Hera) CheckCertificates() {
 	certificateConfig := NewCertificateConfig()
 	certs, err := certificateConfig.scanAll()
-	if err != nil {
-		log.Errorf("Error while checking certificates: %s", err)
-		return
-	}
-
-	if len(certs) == 0 {
+	if err != nil || len(certs) == 0 {
 		log.Error(CertificateIsNeededMessage)
 		return
 	}
