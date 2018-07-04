@@ -37,7 +37,7 @@ func TestFullPathContainsPath(t *testing.T) {
 	}
 }
 
-func TestExists(t *testing.T) {
+func TestIsExist(t *testing.T) {
 	fs = afero.NewMemMapFs()
 	cert := NewCertificate("cert.pem")
 
