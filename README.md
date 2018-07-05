@@ -7,8 +7,7 @@ Hera lets you instantly access services outside of your local network with a cus
 Hera monitors the state of your configured services to instantly start a tunnel when the container starts. Tunnel processes are also monitored to ensure persistent connections and to restart them in the event of sudden disconnects or shutdowns. Tunnels are automatically restarted when their containers are restarted, or gracefully shutdown if their containers are stopped.
 
 [![Build Status](https://semaphoreci.com/api/v1/aschzero/hera/branches/master/badge.svg)](https://semaphoreci.com/aschzero/hera)
-[![](https://images.microbadger.com/badges/version/aschzero/hera.svg)](https://microbadger.com/images/aschzero/hera "Get your own version badge on microbadger.com")
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/aschzero/hera/blob/master/LICENSE)
+[![GitHub version](https://badge.fury.io/gh/aschzero%2Fhera.svg)](https://badge.fury.io/gh/aschzero%2Fhera)
 
 ----
 
@@ -41,7 +40,7 @@ Hera attaches to the Docker daemon to watch for changes in state of your configu
 
 In the event that a container with an active tunnel has been stopped, Hera gracefully shuts down the tunnel process.
 
-ℹ️ Hera only monitors the state of containers that have been explicitly configured for Hera. Otherwise, containers and their events are completely ignored (see [Configuring Containers](#configuring-containers)).
+ℹ️ Hera only monitors the state of containers that have been explicitly configured for Hera. Otherwise, containers and their events are completely ignored.
 
 # Getting Started
 ## Prerequisites
