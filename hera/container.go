@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	tld "github.com/jpillora/go-tld"
 )
@@ -56,13 +58,43 @@ func (c Container) tryTunnel() (*Tunnel, error) {
 	return tunnel, nil
 }
 
-func (c Container) resolveHostname() (string, error) {
-	resolved, err := net.LookupHost(c.Hostname)
-	if err != nil {
-		return "", errors.New("unable to resolve hostname")
+func (c Container) hasRequiredLabels() bool {
+	required := []string{
+		"hera.hostname",
+		"hera.port",
 	}
 
-	return resolved[0], nil
+	for _, label := range required {
+		if _, ok := c.Labels[label]; !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (c Container) resolveHostname() (string, error) {
+	var resolved []string
+	var err error
+	attempts := 0
+	maxAttempts := 5
+
+	for attempts < maxAttempts {
+		attempts++
+		resolved, err = net.LookupHost(c.Hostname)
+
+		if err != nil {
+			log.Infof("Unable to resolve hostname, retrying... (%d/%d)", attempts, maxAttempts)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		if err == nil {
+			return resolved[0], nil
+		}
+	}
+
+	return "", fmt.Errorf("Unable to resolve hostname for container %s", c.ID)
 }
 
 func (c Container) getHostname() (string, error) {
