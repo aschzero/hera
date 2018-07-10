@@ -27,34 +27,6 @@ func (h Hera) checkCertificates() {
 	}
 }
 
-func (h Hera) revive() {
-	containers, err := h.Client.Docker.ContainerList(context.Background(), types.ContainerListOptions{})
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	for _, c := range containers {
-		container, err := NewContainer(h.Client, c.ID)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-
-		tunnel, err := container.tryTunnel()
-		if err != nil {
-			continue
-		}
-
-		if err := tunnel.start(); err != nil {
-			log.Errorf("Error starting tunnel: %s", err)
-			continue
-		}
-
-		h.registerTunnel(container.ID, tunnel)
-	}
-}
-
 func (h Hera) listen() {
 	log.Info("Hera is listening")
 
@@ -85,24 +57,10 @@ func (h Hera) listen() {
 }
 
 func (h Hera) handleStartEvent(event events.Message) {
-	container, err := NewContainer(h.Client, event.ID)
+	err := h.tryTunnel(event.ID, true)
 	if err != nil {
 		log.Error(err)
-		return
 	}
-
-	tunnel, err := container.tryTunnel()
-	if err != nil {
-		log.Infof("Ignoring container %s: %s", container.ID, err)
-		return
-	}
-
-	if err := tunnel.start(); err != nil {
-		log.Errorf("Error starting tunnel: %s", err)
-		return
-	}
-
-	h.registerTunnel(container.ID, tunnel)
 }
 
 func (h Hera) handleDieEvent(event events.Message) {
@@ -115,6 +73,48 @@ func (h Hera) handleDieEvent(event events.Message) {
 	if tunnel, ok := h.RegisteredTunnels[container.ID]; ok {
 		tunnel.stop()
 	}
+}
+
+func (h Hera) revive() {
+	containers, err := h.Client.Docker.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for _, c := range containers {
+		err := h.tryTunnel(c.ID, false)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+}
+
+func (h Hera) tryTunnel(id string, logIgnore bool) error {
+	container, err := NewContainer(h.Client, id)
+	if err != nil {
+		return err
+	}
+
+	hasLabels := container.hasRequiredLabels()
+	if !hasLabels {
+		if logIgnore {
+			log.Infof("Ignoring container %s", container.ID)
+		}
+		return nil
+	}
+
+	tunnel, err := container.tryTunnel()
+	if err != nil {
+		return err
+	}
+
+	if err := tunnel.start(); err != nil {
+		return err
+	}
+
+	h.registerTunnel(container.ID, tunnel)
+	return nil
 }
 
 func (h Hera) registerTunnel(id string, tunnel *Tunnel) {
