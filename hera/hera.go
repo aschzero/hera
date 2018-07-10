@@ -9,14 +9,12 @@ import (
 	"github.com/docker/docker/api/types/events"
 )
 
-// Hera holds an instantiated Client and a map of registered tunnels
 type Hera struct {
 	Client            *Client
 	RegisteredTunnels map[string]*Tunnel
 }
 
-// CheckCertificates verifies the presence of at least one cert file
-func (h Hera) CheckCertificates() {
+func (h Hera) checkCertificates() {
 	certificateConfig := NewCertificateConfig()
 	certs, err := certificateConfig.scanAll()
 	if err != nil || len(certs) == 0 {
@@ -29,8 +27,7 @@ func (h Hera) CheckCertificates() {
 	}
 }
 
-// Revive starts tunnels for containers already running
-func (h Hera) Revive() {
+func (h Hera) revive() {
 	containers, err := h.Client.Docker.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		log.Error(err)
@@ -54,12 +51,11 @@ func (h Hera) Revive() {
 			continue
 		}
 
-		h.RegisterTunnel(container.ID, tunnel)
+		h.registerTunnel(container.ID, tunnel)
 	}
 }
 
-// Listen continuously listens for container start or die events
-func (h Hera) Listen() {
+func (h Hera) listen() {
 	log.Info("Hera is listening")
 
 	messages, errs := h.Client.Docker.Events(context.Background(), types.EventsOptions{})
@@ -75,20 +71,20 @@ func (h Hera) Listen() {
 
 		case event := <-messages:
 			if event.Status == "start" {
-				h.HandleStartEvent(event)
+				h.handleStartEvent(event)
+
 				continue
 			}
 
 			if event.Status == "die" {
-				h.HandleDieEvent(event)
+				h.handleDieEvent(event)
 				continue
 			}
 		}
 	}
 }
 
-// HandleStartEvent tries to start a tunnel for a new container
-func (h Hera) HandleStartEvent(event events.Message) {
+func (h Hera) handleStartEvent(event events.Message) {
 	container, err := NewContainer(h.Client, event.ID)
 	if err != nil {
 		log.Error(err)
@@ -106,11 +102,10 @@ func (h Hera) HandleStartEvent(event events.Message) {
 		return
 	}
 
-	h.RegisterTunnel(container.ID, tunnel)
+	h.registerTunnel(container.ID, tunnel)
 }
 
-// HandleDieEvent tries to stop a tunnel when a container is stopped
-func (h Hera) HandleDieEvent(event events.Message) {
+func (h Hera) handleDieEvent(event events.Message) {
 	container, err := NewContainer(h.Client, event.ID)
 	if err != nil {
 		log.Error(err)
@@ -122,7 +117,6 @@ func (h Hera) HandleDieEvent(event events.Message) {
 	}
 }
 
-// RegisterTunnel stores a Tunnel in memory for later reference
-func (h Hera) RegisterTunnel(id string, tunnel *Tunnel) {
+func (h Hera) registerTunnel(id string, tunnel *Tunnel) {
 	h.RegisteredTunnels[id] = tunnel
 }

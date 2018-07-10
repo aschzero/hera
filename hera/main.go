@@ -32,7 +32,7 @@ func main() {
 		RegisteredTunnels: make(map[string]*Tunnel),
 	}
 
-	hera.CheckCertificates()
-	hera.Revive()
-	hera.Listen()
+	hera.checkCertificates()
+	hera.revive()
+	hera.listen()
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-// Tunnel holds tunnel metadata and configuration
 type Tunnel struct {
 	ContainerHostname string
 	HeraHostname      string
@@ -19,7 +18,6 @@ type Tunnel struct {
 	TunnelConfig      *TunnelConfig
 }
 
-// TunnelConfig holds tunnel configuration
 type TunnelConfig struct {
 	ServicePath         string
 	RunFilePath         string
