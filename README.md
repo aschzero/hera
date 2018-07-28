@@ -165,7 +165,7 @@ docker run \
   --network=elkstack \
   --network=hera \
   --label hera.hostname=kibana.mysite.com \
-  --label hera.port=5601
+  --label hera.port=5601 \
   -p 5000:5601 \
   docker.elastic.co/kibana/kibana:6.2.4
 ```
