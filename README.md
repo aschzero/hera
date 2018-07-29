@@ -124,7 +124,7 @@ docker run \
   --name=hera \
   --network=hera \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /path/to/certs:/root/.cloudflared \
+  -v /path/to/certs:/certs \
   -v /path/to/logs:/var/log/hera \
   aschzero/hera:latest
 ```
