@@ -1,6 +1,6 @@
 <img alt="Hera" src="https://s3-us-west-2.amazonaws.com/aschzero-hera/hera.png" width="500px">
 
-### Hera automates the creation of [Argo Tunnels](https://developers.cloudflare.com/argo-tunnel/) to easily and securely expose your local services to the outside world.
+### Hera automates the creation of [Argo Tunnels](https://www.cloudflare.com/products/argo-tunnel/) to easily and securely expose your local services to the outside world.
 
 Hera lets you instantly access services outside of your local network with a custom domain using tunnels and is a more secure alternative than using port forwarding or dynamic DNS.
 
