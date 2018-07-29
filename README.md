@@ -106,14 +106,14 @@ docker run \
   --name=hera \
   --network=hera \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /path/to/certs:/root/.cloudflared \
+  -v /path/to/certs:/certs \
   aschzero/hera:latest
 ```
 
 ## Required Volumes
 
 * `/var/run/docker.sock` – Attaching the Docker daemon as a volume allows Hera to monitor container events.
-* `/path/to/certs` – The parent directory of your Cloudflare certificates.
+* `/certs` – The directory of your Cloudflare certificates.
 
 ## Persisting Logs
 

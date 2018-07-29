@@ -8,6 +8,11 @@ import (
 	"github.com/spf13/afero"
 )
 
+const (
+	DefaultCertificateName = "cert.pem"
+	DefaultCertificatePath = "/certs"
+)
+
 type Certificate struct {
 	Name              string
 	CertificateConfig *CertificateConfig
@@ -19,7 +24,7 @@ type CertificateConfig struct {
 
 func NewCertificateConfig() *CertificateConfig {
 	config := &CertificateConfig{
-		Path: "/root/.cloudflared",
+		Path: DefaultCertificatePath,
 	}
 
 	return config
@@ -40,11 +45,25 @@ func NewDefaultCertificate() *Certificate {
 	config := NewCertificateConfig()
 
 	cert := &Certificate{
-		Name:              "cert.pem",
+		Name:              DefaultCertificateName,
 		CertificateConfig: config,
 	}
 
 	return cert
+}
+
+func (c CertificateConfig) checkCertificates() {
+	certs, err := c.scanAll()
+
+	if err != nil || len(certs) == 0 {
+		log.Error(err)
+		log.Error(CertificateIsNeededMessage)
+		return
+	}
+
+	for _, cert := range certs {
+		log.Infof("Found certificate: %s", cert.Name)
+	}
 }
 
 func (c CertificateConfig) scanAll() ([]*Certificate, error) {
@@ -63,7 +82,7 @@ func (c CertificateConfig) scanAll() ([]*Certificate, error) {
 	return certs, nil
 }
 
-func (c CertificateConfig) findMatchingCertificate(hostname string) (*Certificate, error) {
+func (c CertificateConfig) findCertificateForHost(hostname string) (*Certificate, error) {
 	certs, err := c.scanAll()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to scan for available certificates: %s", err)
@@ -79,7 +98,7 @@ func (c CertificateConfig) findMatchingCertificate(hostname string) (*Certificat
 	log.Infof("Unable to find `%s.pem`, trying `%s` as a fallback.", hostname, defaultCert.fullPath())
 
 	if !defaultCert.isExist() {
-		return nil, fmt.Errorf("Couldn't find certificate. Tried searching for both `%s`.pem and `%s`", hostname, defaultCert.Name)
+		return nil, fmt.Errorf("Couldn't find certificate. Tried searching for both `%s.pem` and `%s`", hostname, defaultCert.Name)
 	}
 
 	return defaultCert, nil
@@ -106,7 +125,7 @@ func (c Certificate) isExist() bool {
 
 const (
 	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
-		"\n\n 1. Ensure this container has a volume mapped to `/root/.cloudflared`" +
+		"\n\n 1. Ensure this container has a volume mapped to `" + DefaultCertificatePath + "`" +
 		"\n 2. Obtain a certificate by visiting https://www.cloudflare.com/a/warp" +
 		"\n 3. Rename the certificate to your hostname (e.g.: `mysite.com`) and move it to the volume" +
 		"\n\n See https://github.com/aschzero/hera#obtain-a-certificate for more info.\n"

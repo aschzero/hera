@@ -122,7 +122,7 @@ func (c Container) getCertificate() (*Certificate, error) {
 		return nil, err
 	}
 
-	cert, err := certConfig.findMatchingCertificate(rootHostname)
+	cert, err := certConfig.findCertificateForHost(rootHostname)
 	if err != nil {
 		return nil, err
 	}

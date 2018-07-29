@@ -14,19 +14,6 @@ type Hera struct {
 	RegisteredTunnels map[string]*Tunnel
 }
 
-func (h Hera) checkCertificates() {
-	certificateConfig := NewCertificateConfig()
-	certs, err := certificateConfig.scanAll()
-	if err != nil || len(certs) == 0 {
-		log.Error(CertificateIsNeededMessage)
-		return
-	}
-
-	for _, cert := range certs {
-		log.Infof("Found certificate: %s", cert.Name)
-	}
-}
-
 func (h Hera) listen() {
 	log.Info("Hera is listening")
 

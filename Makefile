@@ -28,7 +28,7 @@ test:
 	docker run --rm -v $(PWD)/hera:/hera -w /hera $(BUILD_IMAGE) go test -v
 
 run:
-	docker run --rm --name=$(NAME) --network=$(NAME) -v /var/run/docker.sock:/var/run/docker.sock -v $(PWD)/.cloudflared:/root/.cloudflared $(NAME)
+	docker run --rm --name=$(NAME) --network=$(NAME) -v /var/run/docker.sock:/var/run/docker.sock -v $(PWD)/certs:/root/.cloudflared $(NAME)
 
 tunnel:
 	docker run --rm --label hera.hostname=$(HOSTNAME) --label hera.port=80 --network=$(NAME) nginx

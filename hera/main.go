@@ -27,12 +27,13 @@ func main() {
 		return
 	}
 
+	certConfig := NewCertificateConfig()
 	hera := &Hera{
 		Client:            client,
 		RegisteredTunnels: make(map[string]*Tunnel),
 	}
 
-	hera.checkCertificates()
+	certConfig.checkCertificates()
 	hera.revive()
 	hera.listen()
 }

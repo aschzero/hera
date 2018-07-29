@@ -1,0 +1,8 @@
+#!/bin/sh
+
+OLD_DIR=/root/.cloudflared
+
+if [ -d "$OLD_DIR" ]; then
+  ln -s $OLD_DIR /certs
+  echo "[WARNING] Deprecation notice: certificates will need to be mounted to /certs instead of /root/.cloudflared. The old path will not be supported in the near future."
+fi

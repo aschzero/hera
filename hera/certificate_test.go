@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -84,11 +85,12 @@ func TestBelongsToHost(t *testing.T) {
 }
 
 func TestFullPath(t *testing.T) {
-	cert := NewCertificate("mysite.pem")
-	expected := "/root/.cloudflared/mysite.pem"
+	name := "mysite.pem"
+	cert := NewCertificate(name)
+	expected := strings.Join([]string{DefaultCertificatePath, name}, "/")
 
 	if cert.fullPath() != expected {
-		t.Errorf("Unexpected certificate path: %s", cert.Name)
+		t.Errorf("Unexpected certificate path, got %s want %s", cert.fullPath(), cert.CertificateConfig.Path)
 	}
 }
 
