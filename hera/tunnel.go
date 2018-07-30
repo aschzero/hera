@@ -125,7 +125,12 @@ func (t Tunnel) generateConfigFile() error {
 }
 
 func (t Tunnel) generateRunFile() error {
-	run := fmt.Sprintf("#!/bin/sh\nexec cloudflared --config %s\n", t.TunnelConfig.ConfigFilePath)
+	runLines := []string{
+		"#!/bin/sh",
+		"exec cloudflared --config %s",
+	}
+
+	run := fmt.Sprintf(strings.Join(runLines[:], "\n"), t.TunnelConfig.ConfigFilePath)
 
 	if err := afero.WriteFile(fs, t.TunnelConfig.RunFilePath, []byte(run), os.ModePerm); err != nil {
 		return err
