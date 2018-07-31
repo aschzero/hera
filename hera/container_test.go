@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -56,7 +57,7 @@ func TestGetPort(t *testing.T) {
 
 func TestGetCertificate(t *testing.T) {
 	fs = afero.NewMemMapFs()
-	cert := NewCertificate(container.Hostname)
+	cert := NewCertificate(strings.Join([]string{container.Hostname, ".pem"}, ""))
 
 	fs.Create(cert.fullPath())
 

@@ -70,6 +70,29 @@ func TestScanAllExisting(t *testing.T) {
 	}
 }
 
+func TestScanAllOnlyPemExtension(t *testing.T) {
+	fs = afero.NewMemMapFs()
+	fs.Mkdir(config.Path, os.ModeDir)
+
+	certs := []*Certificate{
+		NewCertificate("cert.pem"),
+		NewCertificate("ignore.txt"),
+	}
+
+	for _, newCert := range certs {
+		fs.Create(newCert.fullPath())
+	}
+
+	certs, err := config.scanAll()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(certs) != 1 {
+		t.Errorf("Unexpected scan count, got %d", len(certs))
+	}
+}
+
 func TestBelongsToHost(t *testing.T) {
 	cert := NewCertificate("hostname.com.pem")
 

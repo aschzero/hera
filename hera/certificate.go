@@ -75,7 +75,13 @@ func (c CertificateConfig) scanAll() ([]*Certificate, error) {
 	}
 
 	for _, file := range files {
-		cert := NewCertificate(file.Name())
+		name := file.Name()
+
+		if !strings.HasSuffix(name, ".pem") {
+			continue
+		}
+
+		cert := NewCertificate(name)
 		certs = append(certs, cert)
 	}
 
