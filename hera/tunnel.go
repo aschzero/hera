@@ -84,13 +84,13 @@ func (t *Tunnel) start() error {
 }
 
 func (t *Tunnel) stop() {
-	err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Run()
+	err := exec.Command("s6-svc", "-d", t.TunnelConfig.ServicePath).Run()
 	if err != nil {
 		log.Errorf("Unable to stop tunnel %s: %s", t.HeraHostname, err)
 		return
 	}
 
-	log.Infof("Stopped tunnel %s", t.HeraHostname)
+	log.Infof("Stopping tunnel %s", t.HeraHostname)
 }
 
 func (t *Tunnel) prepareService() error {
@@ -147,7 +147,21 @@ func (t *Tunnel) startService() error {
 	}
 
 	if registered {
-		err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.RegisteredServicePath}...).Run()
+		running, err := t.serviceRunning()
+		if err != nil {
+			return err
+		}
+
+		if running {
+			log.Info("Waiting for previous tunnel to shut down")
+
+			err = exec.Command("s6-svwait", "-d", t.TunnelConfig.RegisteredServicePath).Run()
+			if err != nil {
+				return err
+			}
+		}
+
+		err = exec.Command("s6-svc", "-u", t.TunnelConfig.RegisteredServicePath).Run()
 		if err != nil {
 			return err
 		}
@@ -160,7 +174,7 @@ func (t *Tunnel) startService() error {
 		return err
 	}
 
-	err = exec.Command("s6-svscanctl", []string{"-a", RegisteredServicesPath}...).Run()
+	err = exec.Command("s6-svscanctl", "-a", RegisteredServicesPath).Run()
 	if err != nil {
 		return err
 	}
@@ -181,4 +195,13 @@ func (t *Tunnel) serviceRegistered() (bool, error) {
 	}
 
 	return registered, nil
+}
+
+func (t *Tunnel) serviceRunning() (bool, error) {
+	out, err := exec.Command("s6-svstat", "-u", t.TunnelConfig.RegisteredServicePath).Output()
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(string(out), "true"), nil
 }
