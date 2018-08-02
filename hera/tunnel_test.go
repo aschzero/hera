@@ -8,16 +8,10 @@ import (
 	"github.com/spf13/afero"
 )
 
-var tunnel = &Tunnel{
-	ContainerHostname: "0.0.0.0",
-	HeraHostname:      "host.name",
-	HeraPort:          "8080",
-	Certificate:       NewCertificate("cert.pem"),
-}
+var tunnel = NewTunnel("f56540dbf360", "host.name", "8080", NewCertificate("cert.pem"))
 
 func TestPrepareService(t *testing.T) {
 	fs = afero.NewMemMapFs()
-	tunnel := NewTunnel(tunnel.ContainerHostname, tunnel.HeraHostname, tunnel.HeraPort, tunnel.Certificate)
 
 	if err := tunnel.prepareService(); err != nil {
 		t.Error(err)
@@ -31,7 +25,6 @@ func TestPrepareService(t *testing.T) {
 
 func TestGenerateConfigFile(t *testing.T) {
 	fs = afero.NewMemMapFs()
-	tunnel := NewTunnel(tunnel.ContainerHostname, tunnel.HeraHostname, tunnel.HeraPort, tunnel.Certificate)
 
 	if err := tunnel.generateConfigFile(); err != nil {
 		t.Error(err)
@@ -45,7 +38,6 @@ func TestGenerateConfigFile(t *testing.T) {
 
 func TestGenerateRunFile(t *testing.T) {
 	fs = afero.NewMemMapFs()
-	tunnel := NewTunnel(tunnel.ContainerHostname, tunnel.HeraHostname, tunnel.HeraPort, tunnel.Certificate)
 
 	if err := tunnel.generateRunFile(); err != nil {
 		t.Error(err)

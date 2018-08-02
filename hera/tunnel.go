@@ -84,8 +84,9 @@ func (t *Tunnel) start() error {
 }
 
 func (t *Tunnel) stop() {
-	if err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Run(); err != nil {
-		log.Errorf("Error while stopping tunnel %s: %s", t.HeraHostname, err)
+	err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Run()
+	if err != nil {
+		log.Errorf("Unable to stop tunnel %s: %s", t.HeraHostname, err)
 		return
 	}
 
@@ -140,24 +141,44 @@ func (t *Tunnel) generateRunFile() error {
 }
 
 func (t *Tunnel) startService() error {
-	exists, err := afero.Exists(fs, t.TunnelConfig.RegisteredServicePath)
+	registered, err := t.serviceRegistered()
 	if err != nil {
 		return err
 	}
 
-	if exists {
-		if err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.RegisteredServicePath}...).Run(); err != nil {
-			return err
-		}
-	} else {
-		if err := os.Symlink(t.TunnelConfig.ServicePath, t.TunnelConfig.RegisteredServicePath); err != nil {
+	if registered {
+		err := exec.Command("s6-svc", []string{"-u", t.TunnelConfig.RegisteredServicePath}...).Run()
+		if err != nil {
 			return err
 		}
 
-		if err := exec.Command("s6-svscanctl", []string{"-a", RegisteredServicesPath}...).Run(); err != nil {
-			return err
-		}
+		return nil
+	}
+
+	err = t.registerService()
+	if err != nil {
+		return err
+	}
+
+	err = exec.Command("s6-svscanctl", []string{"-a", RegisteredServicesPath}...).Run()
+	if err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func (t *Tunnel) registerService() error {
+	err := os.Symlink(t.TunnelConfig.ServicePath, t.TunnelConfig.RegisteredServicePath)
+
+	return err
+}
+
+func (t *Tunnel) serviceRegistered() (bool, error) {
+	registered, err := afero.Exists(fs, t.TunnelConfig.RegisteredServicePath)
+	if err != nil {
+		return false, err
+	}
+
+	return registered, nil
 }
