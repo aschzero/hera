@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -50,7 +51,7 @@ func TestGenerateRunFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, err := fs.Stat(tunnel.TunnelConfig.RunFilePath)
+	_, err := fs.Stat(filepath.Join(tunnel.TunnelConfig.ServicePath, "run"))
 	if os.IsNotExist(err) {
 		t.Error(err)
 	}
