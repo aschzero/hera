@@ -14,7 +14,7 @@ type Hera struct {
 	RegisteredTunnels map[string]*Tunnel
 }
 
-func (h Hera) listen() {
+func (h *Hera) listen() {
 	log.Info("Hera is listening")
 
 	messages, errs := h.Client.Docker.Events(context.Background(), types.EventsOptions{})
@@ -43,14 +43,14 @@ func (h Hera) listen() {
 	}
 }
 
-func (h Hera) handleStartEvent(event events.Message) {
+func (h *Hera) handleStartEvent(event events.Message) {
 	err := h.tryTunnel(event.ID, true)
 	if err != nil {
 		log.Error(err)
 	}
 }
 
-func (h Hera) handleDieEvent(event events.Message) {
+func (h *Hera) handleDieEvent(event events.Message) {
 	container, err := NewContainer(h.Client, event.ID)
 	if err != nil {
 		log.Error(err)
@@ -62,7 +62,7 @@ func (h Hera) handleDieEvent(event events.Message) {
 	}
 }
 
-func (h Hera) revive() {
+func (h *Hera) revive() {
 	containers, err := h.Client.Docker.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		log.Error(err)
@@ -77,7 +77,7 @@ func (h Hera) revive() {
 	}
 }
 
-func (h Hera) tryTunnel(id string, logIgnore bool) error {
+func (h *Hera) tryTunnel(id string, logIgnore bool) error {
 	container, err := NewContainer(h.Client, id)
 	if err != nil {
 		return err
@@ -104,6 +104,6 @@ func (h Hera) tryTunnel(id string, logIgnore bool) error {
 	return nil
 }
 
-func (h Hera) registerTunnel(id string, tunnel *Tunnel) {
+func (h *Hera) registerTunnel(id string, tunnel *Tunnel) {
 	h.RegisteredTunnels[id] = tunnel
 }

@@ -52,7 +52,7 @@ func NewDefaultCertificate() *Certificate {
 	return cert
 }
 
-func (c CertificateConfig) checkCertificates() {
+func (c *CertificateConfig) checkCertificates() {
 	certs, err := c.scanAll()
 
 	if err != nil || len(certs) == 0 {
@@ -66,7 +66,7 @@ func (c CertificateConfig) checkCertificates() {
 	}
 }
 
-func (c CertificateConfig) scanAll() ([]*Certificate, error) {
+func (c *CertificateConfig) scanAll() ([]*Certificate, error) {
 	var certs []*Certificate
 
 	files, err := afero.ReadDir(fs, c.Path)
@@ -88,7 +88,7 @@ func (c CertificateConfig) scanAll() ([]*Certificate, error) {
 	return certs, nil
 }
 
-func (c CertificateConfig) findCertificateForHost(hostname string) (*Certificate, error) {
+func (c *CertificateConfig) findCertificateForHost(hostname string) (*Certificate, error) {
 	certs, err := c.scanAll()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to scan for available certificates: %s", err)
@@ -110,17 +110,17 @@ func (c CertificateConfig) findCertificateForHost(hostname string) (*Certificate
 	return defaultCert, nil
 }
 
-func (c Certificate) belongsToHost(host string) bool {
+func (c *Certificate) belongsToHost(host string) bool {
 	baseCertName := strings.Split(c.Name, ".pem")[0]
 
 	return host == baseCertName
 }
 
-func (c Certificate) fullPath() string {
+func (c *Certificate) fullPath() string {
 	return filepath.Join(c.CertificateConfig.Path, c.Name)
 }
 
-func (c Certificate) isExist() bool {
+func (c *Certificate) isExist() bool {
 	exists, err := afero.Exists(fs, c.fullPath())
 	if err != nil {
 		log.Error(err)

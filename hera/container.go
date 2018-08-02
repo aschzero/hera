@@ -32,7 +32,7 @@ func NewContainer(client *Client, id string) (*Container, error) {
 	return container, nil
 }
 
-func (c Container) tryTunnel() (*Tunnel, error) {
+func (c *Container) tryTunnel() (*Tunnel, error) {
 	address, err := c.resolveHostname()
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (c Container) tryTunnel() (*Tunnel, error) {
 	return tunnel, nil
 }
 
-func (c Container) hasRequiredLabels() bool {
+func (c *Container) hasRequiredLabels() bool {
 	required := []string{
 		"hera.hostname",
 		"hera.port",
@@ -73,7 +73,7 @@ func (c Container) hasRequiredLabels() bool {
 	return true
 }
 
-func (c Container) resolveHostname() (string, error) {
+func (c *Container) resolveHostname() (string, error) {
 	var resolved []string
 	var err error
 	attempts := 0
@@ -97,7 +97,7 @@ func (c Container) resolveHostname() (string, error) {
 	return "", fmt.Errorf("Unable to resolve hostname for container %s", c.ID)
 }
 
-func (c Container) getHostname() (string, error) {
+func (c *Container) getHostname() (string, error) {
 	hostname, ok := c.Labels["hera.hostname"]
 	if !ok || hostname == "" {
 		return "", errors.New("No hera.hostname label")
@@ -106,7 +106,7 @@ func (c Container) getHostname() (string, error) {
 	return hostname, nil
 }
 
-func (c Container) getPort() (string, error) {
+func (c *Container) getPort() (string, error) {
 	port, ok := c.Labels["hera.port"]
 	if !ok || port == "" {
 		return "", errors.New("No hera.port label")
@@ -115,7 +115,7 @@ func (c Container) getPort() (string, error) {
 	return port, nil
 }
 
-func (c Container) getCertificate() (*Certificate, error) {
+func (c *Container) getCertificate() (*Certificate, error) {
 	certConfig := NewCertificateConfig()
 	rootHostname, err := c.getRootHost()
 	if err != nil {
@@ -130,7 +130,7 @@ func (c Container) getCertificate() (*Certificate, error) {
 	return cert, nil
 }
 
-func (c Container) getRootHost() (string, error) {
+func (c *Container) getRootHost() (string, error) {
 	hostname, err := c.getHostname()
 	if err != nil {
 		return "", err

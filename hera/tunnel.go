@@ -61,7 +61,7 @@ func NewTunnel(containerHostname string, heraHostname string, heraPort string, c
 	return tunnel
 }
 
-func (t Tunnel) start() error {
+func (t *Tunnel) start() error {
 	log.Infof("Registering tunnel %s @ %s:%s", t.HeraHostname, t.ContainerHostname, t.HeraPort)
 	log.Infof("Logging to %s", t.TunnelConfig.LogFilePath)
 
@@ -84,7 +84,7 @@ func (t Tunnel) start() error {
 	return nil
 }
 
-func (t Tunnel) stop() {
+func (t *Tunnel) stop() {
 	if err := exec.Command("s6-svc", []string{"-d", t.TunnelConfig.ServicePath}...).Run(); err != nil {
 		log.Errorf("Error while stopping tunnel %s: %s", t.HeraHostname, err)
 		return
@@ -93,7 +93,7 @@ func (t Tunnel) stop() {
 	log.Infof("Stopped tunnel %s", t.HeraHostname)
 }
 
-func (t Tunnel) prepareService() error {
+func (t *Tunnel) prepareService() error {
 	exists, err := afero.DirExists(fs, t.TunnelConfig.ServicePath)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (t Tunnel) prepareService() error {
 	return nil
 }
 
-func (t Tunnel) generateConfigFile() error {
+func (t *Tunnel) generateConfigFile() error {
 	configLines := []string{
 		"hostname: %s",
 		"url: %s:%s",
@@ -124,7 +124,7 @@ func (t Tunnel) generateConfigFile() error {
 	return nil
 }
 
-func (t Tunnel) generateRunFile() error {
+func (t *Tunnel) generateRunFile() error {
 	runLines := []string{
 		"#!/bin/sh",
 		"exec cloudflared --config %s",
@@ -139,7 +139,7 @@ func (t Tunnel) generateRunFile() error {
 	return nil
 }
 
-func (t Tunnel) startService() error {
+func (t *Tunnel) startService() error {
 	exists, err := afero.Exists(fs, t.TunnelConfig.S6TunnelServicePath)
 	if err != nil {
 		return err
