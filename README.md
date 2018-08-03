@@ -209,4 +209,4 @@ INFO[0043] Initiating graceful shutdown...
 # Contributing
 
 * If you'd like to contribute to the project, refer to the [contributing documentation](https://github.com/aschzero/hera/blob/master/CONTRIBUTING.md).
-* Read the [Local Development](https://github.com/aschzero/hera/wiki/Local-Development) wiki for information on how to setup Hera for local development.
+* Read the [Development](https://github.com/aschzero/hera/wiki/Development) wiki for information on how to setup Hera for local development.
