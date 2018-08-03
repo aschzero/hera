@@ -16,11 +16,12 @@ const (
 )
 
 type Tunnel struct {
-	ContainerHostname string
-	HeraHostname      string
-	HeraPort          string
-	Certificate       *Certificate
-	TunnelConfig      *TunnelConfig
+	Hostname     string
+	IP           string
+	HeraHostname string
+	HeraPort     string
+	Certificate  *Certificate
+	TunnelConfig *TunnelConfig
 }
 
 type TunnelConfig struct {
@@ -30,9 +31,25 @@ type TunnelConfig struct {
 	LogFilePath           string
 }
 
-func NewTunnelConfig(heraHostname string) *TunnelConfig {
-	servicePath := filepath.Join(ServicesPath, heraHostname)
-	registeredServicePath := filepath.Join(RegisteredServicesPath, heraHostname)
+func NewTunnel(ip string, heraHostname string, hostname string, port string, certificate *Certificate) *Tunnel {
+	tunnelConfig := NewTunnelConfig(hostname, heraHostname)
+
+	tunnel := &Tunnel{
+		Hostname:     hostname,
+		IP:           ip,
+		HeraHostname: heraHostname,
+		HeraPort:     port,
+		Certificate:  certificate,
+		TunnelConfig: tunnelConfig,
+	}
+
+	return tunnel
+}
+
+func NewTunnelConfig(hostname string, heraHostname string) *TunnelConfig {
+	serviceID := strings.Join([]string{heraHostname, hostname}, "-")
+	servicePath := filepath.Join(ServicesPath, serviceID)
+	registeredServicePath := filepath.Join(RegisteredServicesPath, serviceID)
 	configFilePath := filepath.Join(servicePath, "config.yml")
 	logFilePath := strings.Join([]string{filepath.Join("/var/log/hera", heraHostname), "log"}, ".")
 
@@ -46,22 +63,8 @@ func NewTunnelConfig(heraHostname string) *TunnelConfig {
 	return tunnelConfig
 }
 
-func NewTunnel(containerHostname string, heraHostname string, heraPort string, certificate *Certificate) *Tunnel {
-	tunnelConfig := NewTunnelConfig(heraHostname)
-
-	tunnel := &Tunnel{
-		ContainerHostname: containerHostname,
-		HeraHostname:      heraHostname,
-		HeraPort:          heraPort,
-		Certificate:       certificate,
-		TunnelConfig:      tunnelConfig,
-	}
-
-	return tunnel
-}
-
 func (t *Tunnel) start() error {
-	log.Infof("Registering tunnel %s @ %s:%s", t.HeraHostname, t.ContainerHostname, t.HeraPort)
+	log.Infof("Registering tunnel %s @ %s:%s", t.HeraHostname, t.IP, t.HeraPort)
 	log.Infof("Logging to %s", t.TunnelConfig.LogFilePath)
 
 	if err := t.prepareService(); err != nil {
@@ -115,8 +118,7 @@ func (t *Tunnel) generateConfigFile() error {
 		"no-autoupdate: true",
 	}
 
-	config := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.HeraHostname, t.ContainerHostname, t.HeraPort, t.TunnelConfig.LogFilePath, t.Certificate.fullPath())
-
+	config := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.HeraHostname, t.IP, t.HeraPort, t.TunnelConfig.LogFilePath, t.Certificate.fullPath())
 	if err := afero.WriteFile(fs, t.TunnelConfig.ConfigFilePath, []byte(config), 0644); err != nil {
 		return err
 	}

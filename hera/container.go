@@ -33,7 +33,7 @@ func NewContainer(client *Client, id string) (*Container, error) {
 }
 
 func (c *Container) tryTunnel() (*Tunnel, error) {
-	address, err := c.resolveHostname()
+	ip, err := c.resolveHostname()
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *Container) tryTunnel() (*Tunnel, error) {
 		return nil, err
 	}
 
-	tunnel := NewTunnel(address, hostname, port, cert)
+	tunnel := NewTunnel(ip, hostname, c.Hostname, port, cert)
 
 	return tunnel, nil
 }
@@ -84,7 +84,7 @@ func (c *Container) resolveHostname() (string, error) {
 		resolved, err = net.LookupHost(c.Hostname)
 
 		if err != nil {
-			log.Infof("Unable to resolve hostname, retrying... (%d/%d)", attempts, maxAttempts)
+			log.Infof("Unable to resolve hostname, retrying (%d/%d)", attempts, maxAttempts)
 			time.Sleep(2 * time.Second)
 			continue
 		}

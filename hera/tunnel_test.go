@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var tunnel = NewTunnel("f56540dbf360", "host.name", "8080", NewCertificate("cert.pem"))
+var tunnel = NewTunnel("172.21.0.3", "f56540dbf360", "host.name", "8080", NewCertificate("cert.pem"))
 
 func TestPrepareService(t *testing.T) {
 	fs = afero.NewMemMapFs()
