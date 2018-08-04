@@ -134,6 +134,6 @@ const (
 	CertificateIsNeededMessage = "\n Hera is unable to run without a cloudflare certificate. To fix this issue:" +
 		"\n\n 1. Ensure this container has a volume mapped to `" + DefaultCertificatePath + "`" +
 		"\n 2. Obtain a certificate by visiting https://www.cloudflare.com/a/warp" +
-		"\n 3. Rename the certificate to your hostname (e.g.: `mysite.com`) and move it to the volume" +
+		"\n 3. Rename the certificate to your hostname (e.g.: `mysite.com.pem`) and move it to the volume" +
 		"\n\n See https://github.com/aschzero/hera#obtain-a-certificate for more info.\n"
 )
