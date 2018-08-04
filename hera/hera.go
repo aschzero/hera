@@ -26,7 +26,11 @@ func run() {
 		RegisteredTunnels: make(map[string]*Tunnel),
 	}
 
-	hera.revive()
+	err = hera.revive()
+	if err != nil {
+		log.Error(err)
+	}
+
 	hera.listen()
 }
 
