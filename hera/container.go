@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/client"
 	tld "github.com/jpillora/go-tld"
 )
 
@@ -17,8 +18,8 @@ type Container struct {
 	Labels   map[string]string
 }
 
-func NewContainer(client *Client, id string) (*Container, error) {
-	res, err := client.Docker.ContainerInspect(context.Background(), id)
+func NewContainer(client *client.Client, id string) (*Container, error) {
+	res, err := client.ContainerInspect(context.Background(), id)
 	if err != nil {
 		return nil, err
 	}

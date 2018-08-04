@@ -3,21 +3,37 @@ package main
 import (
 	"context"
 	"io"
-	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/client"
 )
 
 type Hera struct {
-	Client            *Client
+	Client            *client.Client
 	RegisteredTunnels map[string]*Tunnel
+}
+
+func run() {
+	client, err := NewClient()
+	if err != nil {
+		log.Errorf("Error connecting to the Docker daemon: %s", err)
+		return
+	}
+
+	hera := &Hera{
+		Client:            client,
+		RegisteredTunnels: make(map[string]*Tunnel),
+	}
+
+	hera.revive()
+	hera.listen()
 }
 
 func (h *Hera) listen() {
 	log.Info("Hera is listening")
 
-	messages, errs := h.Client.Docker.Events(context.Background(), types.EventsOptions{})
+	messages, errs := h.Client.Events(context.Background(), types.EventsOptions{})
 
 	for {
 		select {
@@ -25,8 +41,6 @@ func (h *Hera) listen() {
 			if err != nil && err != io.EOF {
 				log.Error(err)
 			}
-
-			os.Exit(1)
 
 		case event := <-messages:
 			if event.Status == "start" {
@@ -62,19 +76,20 @@ func (h *Hera) handleDieEvent(event events.Message) {
 	}
 }
 
-func (h *Hera) revive() {
-	containers, err := h.Client.Docker.ContainerList(context.Background(), types.ContainerListOptions{})
+func (h *Hera) revive() error {
+	containers, err := h.Client.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 
 	for _, c := range containers {
 		err := h.tryTunnel(c.ID, false)
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (h *Hera) tryTunnel(id string, logIgnore bool) error {

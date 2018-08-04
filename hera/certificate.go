@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -52,18 +53,18 @@ func NewDefaultCertificate() *Certificate {
 	return cert
 }
 
-func (c *CertificateConfig) checkCertificates() {
+func (c *CertificateConfig) checkCertificates() error {
 	certs, err := c.scanAll()
 
 	if err != nil || len(certs) == 0 {
-		log.Error(err)
-		log.Error(CertificateIsNeededMessage)
-		return
+		return errors.New(CertificateIsNeededMessage)
 	}
 
 	for _, cert := range certs {
 		log.Infof("Found certificate: %s", cert.Name)
 	}
+
+	return nil
 }
 
 func (c *CertificateConfig) scanAll() ([]*Certificate, error) {

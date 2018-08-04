@@ -8,7 +8,7 @@ import (
 
 var log = logging.MustGetLogger("hera")
 
-func InitLogger() {
+func initLogger() {
 	logFile, err := os.OpenFile("/var/log/hera/hera.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Errorf("Unable open log file: %s", err)
