@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/spf13/afero"
-)
+import "github.com/spf13/afero"
 
 var fs = afero.NewOsFs()
 
