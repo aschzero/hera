@@ -114,7 +114,8 @@ func (h *Hera) tryTunnel(id string, logIgnore bool) error {
 		return err
 	}
 
-	if err := tunnel.start(); err != nil {
+	err = tunnel.start()
+	if err != nil {
 		return err
 	}
 
