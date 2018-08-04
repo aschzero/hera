@@ -45,7 +45,6 @@ func (h *Hera) listen() {
 		case event := <-messages:
 			if event.Status == "start" {
 				h.handleStartEvent(event)
-
 				continue
 			}
 
