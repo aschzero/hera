@@ -54,7 +54,13 @@ func (c *Container) tryTunnel() (*Tunnel, error) {
 		return nil, err
 	}
 
-	tunnel := NewTunnel(ip, hostname, c.Hostname, port, cert)
+	config := &TunnelConfig{
+		IP:             ip,
+		Hostname:       c.Hostname,
+		TunnelHostname: hostname,
+		TunnelPort:     port,
+	}
+	tunnel := NewTunnel(config, cert)
 
 	return tunnel, nil
 }

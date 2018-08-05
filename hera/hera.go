@@ -75,7 +75,10 @@ func (h *Hera) handleDieEvent(event events.Message) {
 	}
 
 	if tunnel, ok := h.RegisteredTunnels[container.ID]; ok {
-		tunnel.stop()
+		err := tunnel.stop()
+		if err != nil {
+			log.Errorf("Unable to stop tunnel %s: %s", tunnel.Config.TunnelHostname, err)
+		}
 	}
 }
 

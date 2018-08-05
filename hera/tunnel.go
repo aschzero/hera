@@ -3,113 +3,121 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/afero"
 )
 
-const (
-	ServicesPath           = "/etc/services.d"
-	RegisteredServicesPath = "/var/run/s6/services"
-)
-
 type Tunnel struct {
-	Hostname     string
-	IP           string
-	HeraHostname string
-	HeraPort     string
-	Certificate  *Certificate
-	TunnelConfig *TunnelConfig
+	Config      *TunnelConfig
+	Certificate *Certificate
+	Service     *Service
 }
 
 type TunnelConfig struct {
-	ServicePath           string
-	RegisteredServicePath string
-	ConfigFilePath        string
-	LogFilePath           string
+	IP             string
+	Hostname       string
+	TunnelHostname string
+	TunnelPort     string
 }
 
-func NewTunnel(ip string, heraHostname string, hostname string, port string, certificate *Certificate) *Tunnel {
-	tunnelConfig := NewTunnelConfig(hostname, heraHostname)
+func NewTunnel(config *TunnelConfig, certificate *Certificate) *Tunnel {
+	serviceConfig := &ServiceConfig{
+		Hostname:       config.Hostname,
+		TunnelHostname: config.TunnelHostname,
+	}
+	service := NewService(serviceConfig)
 
 	tunnel := &Tunnel{
-		Hostname:     hostname,
-		IP:           ip,
-		HeraHostname: heraHostname,
-		HeraPort:     port,
-		Certificate:  certificate,
-		TunnelConfig: tunnelConfig,
+		Config:      config,
+		Certificate: certificate,
+		Service:     service,
 	}
 
 	return tunnel
 }
 
-func NewTunnelConfig(hostname string, heraHostname string) *TunnelConfig {
-	serviceID := strings.Join([]string{heraHostname, hostname}, "-")
-	servicePath := filepath.Join(ServicesPath, serviceID)
-	registeredServicePath := filepath.Join(RegisteredServicesPath, serviceID)
-	configFilePath := filepath.Join(servicePath, "config.yml")
-	logFilePath := strings.Join([]string{filepath.Join("/var/log/hera", heraHostname), "log"}, ".")
-
-	tunnelConfig := &TunnelConfig{
-		ServicePath:           servicePath,
-		RegisteredServicePath: registeredServicePath,
-		ConfigFilePath:        configFilePath,
-		LogFilePath:           logFilePath,
-	}
-
-	return tunnelConfig
-}
-
 func (t *Tunnel) start() error {
-	log.Infof("Registering tunnel %s @ %s:%s", t.HeraHostname, t.IP, t.HeraPort)
-	log.Infof("Logging to %s", t.TunnelConfig.LogFilePath)
+	log.Infof("Registering tunnel %s @ %s:%s", t.Config.TunnelHostname, t.Config.IP, t.Config.TunnelPort)
 
-	if err := t.prepareService(); err != nil {
+	err := t.prepareService()
+	if err != nil {
 		return err
 	}
 
-	if err := t.generateConfigFile(); err != nil {
-		return err
-	}
-
-	if err := t.generateRunFile(); err != nil {
-		return err
-	}
-
-	if err := t.startService(); err != nil {
+	err = t.startService()
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (t *Tunnel) stop() {
-	err := exec.Command("s6-svc", "-d", t.TunnelConfig.ServicePath).Run()
+func (t *Tunnel) stop() error {
+	err := t.Service.stop()
 	if err != nil {
-		log.Errorf("Unable to stop tunnel %s: %s", t.HeraHostname, err)
-		return
+		return err
 	}
 
-	log.Infof("Stopping tunnel %s", t.HeraHostname)
+	log.Infof("Stopping tunnel %s", t.Config.TunnelHostname)
+	return nil
 }
 
 func (t *Tunnel) prepareService() error {
-	exists, err := afero.DirExists(fs, t.TunnelConfig.ServicePath)
+	err := t.Service.create()
 	if err != nil {
 		return err
 	}
 
-	if !exists {
-		fs.Mkdir(t.TunnelConfig.ServicePath, os.ModePerm)
+	err = t.writeConfigFile()
+	if err != nil {
+		return err
+	}
+
+	err = t.writeRunFile()
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (t *Tunnel) generateConfigFile() error {
+func (t *Tunnel) startService() error {
+	supervised, err := t.Service.isSupervised()
+	if err != nil {
+		return err
+	}
+
+	if !supervised {
+		err := t.Service.supervise()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	running, err := t.Service.isRunning()
+	if err != nil {
+		return err
+	}
+
+	if running {
+		err := t.Service.restart()
+		if err != nil {
+			return err
+		}
+	} else {
+		err := t.Service.start()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (t *Tunnel) writeConfigFile() error {
+	configPath := t.Service.configFilePath()
 	configLines := []string{
 		"hostname: %s",
 		"url: %s:%s",
@@ -118,92 +126,27 @@ func (t *Tunnel) generateConfigFile() error {
 		"no-autoupdate: true",
 	}
 
-	config := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.HeraHostname, t.IP, t.HeraPort, t.TunnelConfig.LogFilePath, t.Certificate.fullPath())
-	if err := afero.WriteFile(fs, t.TunnelConfig.ConfigFilePath, []byte(config), 0644); err != nil {
+	contents := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.Config.TunnelHostname, t.Config.IP, t.Config.TunnelPort, configPath, t.Certificate.fullPath())
+
+	err := afero.WriteFile(fs, configPath, []byte(contents), 0644)
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (t *Tunnel) generateRunFile() error {
-	runFilePath := filepath.Join(t.TunnelConfig.ServicePath, "run")
+func (t *Tunnel) writeRunFile() error {
 	runLines := []string{
 		"#!/bin/sh",
 		"exec cloudflared --config %s",
 	}
+	contents := fmt.Sprintf(strings.Join(runLines[:], "\n"), t.Service.configFilePath())
 
-	run := fmt.Sprintf(strings.Join(runLines[:], "\n"), t.TunnelConfig.ConfigFilePath)
-
-	if err := afero.WriteFile(fs, runFilePath, []byte(run), os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (t *Tunnel) startService() error {
-	registered, err := t.serviceRegistered()
-	if err != nil {
-		return err
-	}
-
-	if registered {
-		running, err := t.serviceRunning()
-		if err != nil {
-			return err
-		}
-
-		if running {
-			log.Info("Waiting for previous tunnel to shut down")
-
-			err = exec.Command("s6-svwait", "-d", t.TunnelConfig.RegisteredServicePath).Run()
-			if err != nil {
-				return err
-			}
-		}
-
-		err = exec.Command("s6-svc", "-u", t.TunnelConfig.RegisteredServicePath).Run()
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	err = t.registerService()
-	if err != nil {
-		return err
-	}
-
-	err = exec.Command("s6-svscanctl", "-a", RegisteredServicesPath).Run()
+	err := afero.WriteFile(fs, t.Service.runFilePath(), []byte(contents), os.ModePerm)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (t *Tunnel) registerService() error {
-	err := os.Symlink(t.TunnelConfig.ServicePath, t.TunnelConfig.RegisteredServicePath)
-
-	return err
-}
-
-func (t *Tunnel) serviceRegistered() (bool, error) {
-	registered, err := afero.Exists(fs, t.TunnelConfig.RegisteredServicePath)
-	if err != nil {
-		return false, err
-	}
-
-	return registered, nil
-}
-
-func (t *Tunnel) serviceRunning() (bool, error) {
-	out, err := exec.Command("s6-svstat", "-u", t.TunnelConfig.RegisteredServicePath).Output()
-	if err != nil {
-		return false, err
-	}
-
-	return strings.Contains(string(out), "true"), nil
 }

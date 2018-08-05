@@ -1,50 +1,57 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/spf13/afero"
 )
 
-var tunnel = NewTunnel("172.21.0.3", "f56540dbf360", "host.name", "8080", NewCertificate("cert.pem"))
+func newTunnel() *Tunnel {
+	config := &TunnelConfig{
+		IP:             "172.23.0.4",
+		Hostname:       "f56540dbf360",
+		TunnelHostname: "site.tld",
+		TunnelPort:     "80",
+	}
+	cert := NewDefaultCertificate()
 
-func TestPrepareService(t *testing.T) {
+	return NewTunnel(config, cert)
+}
+
+func TestWriteConfigFile(t *testing.T) {
 	fs = afero.NewMemMapFs()
+	tunnel := newTunnel()
 
-	if err := tunnel.prepareService(); err != nil {
+	err := tunnel.writeConfigFile()
+	if err != nil {
 		t.Error(err)
 	}
 
-	_, err := fs.Stat(tunnel.TunnelConfig.ServicePath)
-	if os.IsNotExist(err) {
+	exists, err := afero.Exists(fs, tunnel.Service.configFilePath())
+	if err != nil {
 		t.Error(err)
+	}
+
+	if !exists {
+		t.Error("Expected config to exist")
 	}
 }
 
-func TestGenerateConfigFile(t *testing.T) {
+func TestWriteRunFile(t *testing.T) {
 	fs = afero.NewMemMapFs()
+	tunnel := newTunnel()
 
-	if err := tunnel.generateConfigFile(); err != nil {
+	err := tunnel.writeRunFile()
+	if err != nil {
 		t.Error(err)
 	}
 
-	_, err := fs.Stat(tunnel.TunnelConfig.ConfigFilePath)
-	if os.IsNotExist(err) {
-		t.Error(err)
-	}
-}
-
-func TestGenerateRunFile(t *testing.T) {
-	fs = afero.NewMemMapFs()
-
-	if err := tunnel.generateRunFile(); err != nil {
+	exists, err := afero.Exists(fs, tunnel.Service.runFilePath())
+	if err != nil {
 		t.Error(err)
 	}
 
-	_, err := fs.Stat(filepath.Join(tunnel.TunnelConfig.ServicePath, "run"))
-	if os.IsNotExist(err) {
-		t.Error(err)
+	if !exists {
+		t.Error("Expected run to exist")
 	}
 }
