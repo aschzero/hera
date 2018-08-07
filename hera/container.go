@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
-	"github.com/docker/docker/client"
 	tld "github.com/jpillora/go-tld"
 )
 
@@ -18,16 +16,16 @@ type Container struct {
 	Labels   map[string]string
 }
 
-func NewContainer(client *client.Client, id string) (*Container, error) {
-	res, err := client.ContainerInspect(context.Background(), id)
+func NewContainer(id string, client *Client) (*Container, error) {
+	result, err := client.inspect(id)
 	if err != nil {
 		return nil, err
 	}
 
 	container := &Container{
-		ID:       res.ID[0:12],
-		Hostname: res.Config.Hostname,
-		Labels:   res.Config.Labels,
+		ID:       result.ID[0:12],
+		Hostname: result.Config.Hostname,
+		Labels:   result.Config.Labels,
 	}
 
 	return container, nil

@@ -1,23 +1,20 @@
 package main
 
 import (
-	"context"
 	"io"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/client"
 )
 
 type Hera struct {
-	Client            *client.Client
+	Client            *Client
 	RegisteredTunnels map[string]*Tunnel
 }
 
 func run() {
 	client, err := NewClient()
 	if err != nil {
-		log.Errorf("Error connecting to the Docker daemon: %s", err)
+		log.Errorf("Unable to connect to Docker: %s", err)
 		return
 	}
 
@@ -37,7 +34,7 @@ func run() {
 func (h *Hera) listen() {
 	log.Info("Hera is listening")
 
-	messages, errs := h.Client.Events(context.Background(), types.EventsOptions{})
+	messages, errs := h.Client.events()
 
 	for {
 		select {
@@ -68,7 +65,7 @@ func (h *Hera) handleStartEvent(event events.Message) {
 }
 
 func (h *Hera) handleDieEvent(event events.Message) {
-	container, err := NewContainer(h.Client, event.ID)
+	container, err := NewContainer(event.ID, h.Client)
 	if err != nil {
 		log.Error(err)
 		return
@@ -83,7 +80,7 @@ func (h *Hera) handleDieEvent(event events.Message) {
 }
 
 func (h *Hera) revive() error {
-	containers, err := h.Client.ContainerList(context.Background(), types.ContainerListOptions{})
+	containers, err := h.Client.listContainers()
 	if err != nil {
 		return err
 	}
@@ -99,7 +96,7 @@ func (h *Hera) revive() error {
 }
 
 func (h *Hera) tryTunnel(id string, logIgnore bool) error {
-	container, err := NewContainer(h.Client, id)
+	container, err := NewContainer(id, h.Client)
 	if err != nil {
 		return err
 	}
