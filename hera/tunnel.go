@@ -38,8 +38,6 @@ func NewTunnel(config *TunnelConfig, certificate *Certificate) *Tunnel {
 }
 
 func (t *Tunnel) start() error {
-	log.Infof("Registering tunnel %s @ %s:%s", t.Config.TunnelHostname, t.Config.IP, t.Config.TunnelPort)
-
 	err := t.prepareService()
 	if err != nil {
 		return err
@@ -54,12 +52,13 @@ func (t *Tunnel) start() error {
 }
 
 func (t *Tunnel) stop() error {
+	log.Infof("Stopping tunnel %s", t.Config.TunnelHostname)
+
 	err := t.Service.stop()
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Stopping tunnel %s", t.Config.TunnelHostname)
 	return nil
 }
 
@@ -89,6 +88,8 @@ func (t *Tunnel) startService() error {
 	}
 
 	if !supervised {
+		log.Infof("Registering tunnel %s @ %s:%s", t.Config.TunnelHostname, t.Config.IP, t.Config.TunnelPort)
+
 		err := t.Service.supervise()
 		if err != nil {
 			return err
@@ -102,11 +103,15 @@ func (t *Tunnel) startService() error {
 	}
 
 	if running {
+		log.Infof("Restarting tunnel %s", t.Config.TunnelHostname)
+
 		err := t.Service.restart()
 		if err != nil {
 			return err
 		}
 	} else {
+		log.Infof("Starting tunnel %s", t.Config.TunnelHostname, t.Config.IP, t.Config.TunnelPort)
+
 		err := t.Service.start()
 		if err != nil {
 			return err
