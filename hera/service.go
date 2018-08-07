@@ -100,7 +100,7 @@ func (s *Service) restart() error {
 		return err
 	}
 
-	_, err = s.Commander.Run("s6-svc", "-wr", s.servicePath())
+	err = s.start()
 	if err != nil {
 		return err
 	}

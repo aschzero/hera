@@ -117,7 +117,6 @@ func (t *Tunnel) startService() error {
 }
 
 func (t *Tunnel) writeConfigFile() error {
-	configPath := t.Service.configFilePath()
 	configLines := []string{
 		"hostname: %s",
 		"url: %s:%s",
@@ -126,9 +125,9 @@ func (t *Tunnel) writeConfigFile() error {
 		"no-autoupdate: true",
 	}
 
-	contents := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.Config.TunnelHostname, t.Config.IP, t.Config.TunnelPort, configPath, t.Certificate.fullPath())
+	contents := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.Config.TunnelHostname, t.Config.IP, t.Config.TunnelPort, t.Service.logFilePath(), t.Certificate.fullPath())
 
-	err := afero.WriteFile(fs, configPath, []byte(contents), 0644)
+	err := afero.WriteFile(fs, t.Service.configFilePath(), []byte(contents), 0644)
 	if err != nil {
 		return err
 	}
