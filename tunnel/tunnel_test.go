@@ -1,21 +1,21 @@
-package main
+package tunnel
 
 import (
 	"testing"
 
+	"github.com/aschzero/hera/certificate"
 	"github.com/spf13/afero"
 )
 
 func newTunnel() *Tunnel {
-	config := &TunnelConfig{
-		IP:             "172.23.0.4",
-		Hostname:       "f56540dbf360",
-		TunnelHostname: "site.tld",
-		TunnelPort:     "80",
+	config := &Config{
+		IP:       "172.23.0.4",
+		Hostname: "site.tld",
+		Port:     "80",
 	}
-	cert := NewDefaultCertificate()
+	cert := certificate.New("site.tld.pem", afero.NewMemMapFs())
 
-	return NewTunnel(config, cert)
+	return New(config, cert)
 }
 
 func TestWriteConfigFile(t *testing.T) {
@@ -27,7 +27,7 @@ func TestWriteConfigFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	exists, err := afero.Exists(fs, tunnel.Service.configFilePath())
+	exists, err := afero.Exists(fs, tunnel.Service.ConfigFilePath())
 	if err != nil {
 		t.Error(err)
 	}
@@ -46,7 +46,7 @@ func TestWriteRunFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	exists, err := afero.Exists(fs, tunnel.Service.runFilePath())
+	exists, err := afero.Exists(fs, tunnel.Service.RunFilePath())
 	if err != nil {
 		t.Error(err)
 	}

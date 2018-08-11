@@ -1,4 +1,4 @@
-package main
+package listener
 
 import (
 	"context"
@@ -17,7 +17,7 @@ type Client struct {
 	DockerClient *client.Client
 }
 
-func NewClient() (*Client, error) {
+func newClient() (*Client, error) {
 	cli, err := client.NewClient(Socket, APIVersion, nil, nil)
 	if err != nil {
 		return nil, err
@@ -30,14 +30,14 @@ func NewClient() (*Client, error) {
 	return client, nil
 }
 
-func (c *Client) events() (<-chan events.Message, <-chan error) {
+func (c *Client) Events() (<-chan events.Message, <-chan error) {
 	return c.DockerClient.Events(context.Background(), types.EventsOptions{})
 }
 
-func (c *Client) listContainers() ([]types.Container, error) {
+func (c *Client) ListContainers() ([]types.Container, error) {
 	return c.DockerClient.ContainerList(context.Background(), types.ContainerListOptions{})
 }
 
-func (c *Client) inspect(id string) (types.ContainerJSON, error) {
+func (c *Client) Inspect(id string) (types.ContainerJSON, error) {
 	return c.DockerClient.ContainerInspect(context.Background(), id)
 }

@@ -1,10 +1,11 @@
-package main
+package tunnel
 
 import (
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/aschzero/hera/exec"
 	"github.com/spf13/afero"
 )
 
@@ -13,34 +14,31 @@ const (
 	LogPath      = "/var/log/hera"
 )
 
+var fs = afero.NewOsFs()
+
 type Service struct {
-	Config *ServiceConfig
-	Commander
+	Hostname string
+	exec.Commander
 }
 
-type ServiceConfig struct {
-	Hostname       string
-	TunnelHostname string
-}
-
-func NewService(config *ServiceConfig) *Service {
+func NewService(hostname string) *Service {
 	service := &Service{
-		Config:    config,
-		Commander: Command{},
+		Hostname:  hostname,
+		Commander: exec.Command{},
 	}
 
 	return service
 }
 
 func (s *Service) servicePath() string {
-	return filepath.Join(ServicesPath, s.Config.TunnelHostname)
+	return filepath.Join(ServicesPath, s.Hostname)
 }
 
-func (s *Service) configFilePath() string {
+func (s *Service) ConfigFilePath() string {
 	return filepath.Join(s.servicePath(), "config.yml")
 }
 
-func (s *Service) runFilePath() string {
+func (s *Service) RunFilePath() string {
 	return filepath.Join(s.servicePath(), "run")
 }
 
@@ -48,13 +46,13 @@ func (s *Service) supervisePath() string {
 	return filepath.Join(s.servicePath(), "supervise")
 }
 
-func (s *Service) logFilePath() string {
-	logPath := []string{filepath.Join(LogPath, s.Config.TunnelHostname), "log"}
+func (s *Service) LogFilePath() string {
+	logPath := []string{filepath.Join(LogPath, s.Hostname), "log"}
 
 	return strings.Join(logPath, ".")
 }
 
-func (s *Service) create() error {
+func (s *Service) Create() error {
 	exists, err := afero.DirExists(fs, s.servicePath())
 	if err != nil {
 		return err
@@ -67,7 +65,7 @@ func (s *Service) create() error {
 	return nil
 }
 
-func (s *Service) supervise() error {
+func (s *Service) Supervise() error {
 	_, err := s.Commander.Run("s6-svscanctl", "-a", ServicesPath)
 	if err != nil {
 		return err
@@ -76,7 +74,7 @@ func (s *Service) supervise() error {
 	return nil
 }
 
-func (s *Service) start() error {
+func (s *Service) Start() error {
 	_, err := s.Commander.Run("s6-svc", "-u", s.servicePath())
 	if err != nil {
 		return err
@@ -85,7 +83,7 @@ func (s *Service) start() error {
 	return nil
 }
 
-func (s *Service) stop() error {
+func (s *Service) Stop() error {
 	_, err := s.Commander.Run("s6-svc", "-d", s.servicePath())
 	if err != nil {
 		return err
@@ -94,13 +92,13 @@ func (s *Service) stop() error {
 	return nil
 }
 
-func (s *Service) restart() error {
+func (s *Service) Restart() error {
 	err := s.waitUntilDown()
 	if err != nil {
 		return err
 	}
 
-	err = s.start()
+	err = s.Start()
 	if err != nil {
 		return err
 	}
@@ -117,7 +115,7 @@ func (s *Service) waitUntilDown() error {
 	return nil
 }
 
-func (s *Service) isSupervised() (bool, error) {
+func (s *Service) IsSupervised() (bool, error) {
 	registered, err := afero.DirExists(fs, s.supervisePath())
 	if err != nil {
 		return false, err
@@ -126,7 +124,7 @@ func (s *Service) isSupervised() (bool, error) {
 	return registered, nil
 }
 
-func (s *Service) isRunning() (bool, error) {
+func (s *Service) IsRunning() (bool, error) {
 	out, err := s.Commander.Run("s6-svstat", "-u", s.servicePath())
 	if err != nil {
 		return false, err

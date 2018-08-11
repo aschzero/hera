@@ -1,4 +1,4 @@
-package main
+package exec
 
 import (
 	"os/exec"

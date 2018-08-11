@@ -1,4 +1,4 @@
-package main
+package tunnel
 
 import (
 	"os"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/afero"
 )
+
+var service = NewService("site.tld")
 
 type MockCommander struct {
 	mockRun func() ([]byte, error)
@@ -15,18 +17,7 @@ func (c MockCommander) Run(name string, arg ...string) ([]byte, error) {
 	return c.mockRun()
 }
 
-func newService() *Service {
-	config := &ServiceConfig{
-		Hostname:       "f56540dbf360",
-		TunnelHostname: "site.tld",
-	}
-
-	return NewService(config)
-}
-
 func TestServicePath(t *testing.T) {
-	service := newService()
-
 	expected := "/var/run/s6/services/site.tld"
 	actual := service.servicePath()
 
@@ -36,10 +27,8 @@ func TestServicePath(t *testing.T) {
 }
 
 func TestConfigFilePath(t *testing.T) {
-	service := newService()
-
 	expected := "/var/run/s6/services/site.tld/config.yml"
-	actual := service.configFilePath()
+	actual := service.ConfigFilePath()
 
 	if actual != expected {
 		t.Errorf("Unexpected service path, want %s got %s", actual, expected)
@@ -47,10 +36,8 @@ func TestConfigFilePath(t *testing.T) {
 }
 
 func TestRunFilePath(t *testing.T) {
-	service := newService()
-
 	expected := "/var/run/s6/services/site.tld/run"
-	actual := service.runFilePath()
+	actual := service.RunFilePath()
 
 	if actual != expected {
 		t.Errorf("Unexpected run file path, want %s got %s", actual, expected)
@@ -58,10 +45,8 @@ func TestRunFilePath(t *testing.T) {
 }
 
 func TestLogFilePath(t *testing.T) {
-	service := newService()
-
 	expected := "/var/log/hera/site.tld.log"
-	actual := service.logFilePath()
+	actual := service.LogFilePath()
 
 	if actual != expected {
 		t.Errorf("Unexpected log file path, want %s got %s", actual, expected)
@@ -70,9 +55,7 @@ func TestLogFilePath(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	fs = afero.NewMemMapFs()
-	service := newService()
-
-	err := service.create()
+	err := service.Create()
 	if err != nil {
 		t.Error(err)
 	}
@@ -89,9 +72,7 @@ func TestCreate(t *testing.T) {
 
 func TestIsSupervised(t *testing.T) {
 	fs = afero.NewMemMapFs()
-	service := newService()
-
-	supervised, err := service.isSupervised()
+	supervised, err := service.IsSupervised()
 	if err != nil {
 		t.Error(err)
 	}
@@ -103,7 +84,7 @@ func TestIsSupervised(t *testing.T) {
 	path := service.supervisePath()
 	fs.Mkdir(path, os.ModePerm)
 
-	supervised, err = service.isSupervised()
+	supervised, err = service.IsSupervised()
 	if err != nil {
 		t.Error(err)
 	}
@@ -114,14 +95,13 @@ func TestIsSupervised(t *testing.T) {
 }
 
 func TestIsRunning(t *testing.T) {
-	service := newService()
 	service.Commander = &MockCommander{
 		mockRun: func() ([]byte, error) {
 			return []byte("true"), nil
 		},
 	}
 
-	running, err := service.isRunning()
+	running, err := service.IsRunning()
 	if err != nil {
 		t.Error(err)
 	}
@@ -136,7 +116,7 @@ func TestIsRunning(t *testing.T) {
 		},
 	}
 
-	running, err = service.isRunning()
+	running, err = service.IsRunning()
 	if err != nil {
 		t.Error(err)
 	}
