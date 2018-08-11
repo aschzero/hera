@@ -17,12 +17,14 @@ Hera monitors the state of your configured services to instantly start a tunnel 
   * [Prerequisites](#prerequisites)
   * [Obtain a Certificate](#obtain-a-certificate)
   * [Create a Network](#create-a-network)
-  * [Container Configuration](#container-configuration)
 * [Running Hera](#running-hera)
-  * [Required Volumes](#required-volumes)
-  * [Persisting Logs](#persisting-logs)
+    * [Required Volumes](#required-volumes)
+    * [Persisting Logs](#persisting-logs)
+  * [Tunnel Configuration](#tunnel-configuration)
   * [Using Multiple Domains](#using-multiple-domains)
-  * [Examples](#examples)
+* [Examples](#examples)
+  * [Subdomains](#subdomains)
+  * [Docker Compose](#docker-compose)
 * [Contributing](#contributing)
 
 ----
@@ -59,8 +61,6 @@ Hera needs a Cloudflare certificate so it can manage tunnels on your behalf.
 
 Hera will look for certificates with names matching your tunnels' hostnames and allows the use of multiple certificates. For more info, see [Using Multiple Domains](#using-multiple-domains).
 
-----
-
 ## Create a Network
 
 Hera must be able to connect to your containers and resolve their hostnames before it can create a tunnel. This allows Hera to supply a valid address to Cloudflare during the tunnel creation process.
@@ -71,9 +71,43 @@ For example, to create a network named `hera`:
 
 `docker network create hera`
 
-----
+---
 
-## Container Configuration
+# Running Hera
+
+Hera can be started with the following command:
+
+```
+docker run \
+  --name=hera \
+  --network=hera \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /path/to/certs:/certs \
+  aschzero/hera:latest
+```
+
+## Required Volumes
+
+* `/var/run/docker.sock` – Attaching the Docker daemon as a volume allows Hera to monitor container events.
+* `/path/to/certs` – The directory of your Cloudflare certificates.
+
+## Persisting Logs
+
+You can optionally mount a volume to `/var/log/hera` to persist the logs on your host machine:
+
+```
+docker run \
+  --name=hera \
+  --network=hera \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /path/to/certs:/certs \
+  -v /path/to/logs:/var/log/hera \
+  aschzero/hera:latest
+```
+
+ℹ️ Tunnel log files are named according to their hostname and can be found at `/var/log/hera/<hostname>.log`
+
+## Tunnel Configuration
 
 Hera utilizes labels for configuration as a way to let you be explicit about which containers you want enabled. There are only two labels that need to be defined:
 
@@ -93,46 +127,36 @@ docker run \
   nginx
 ```
 
-That's it! Assuming Hera is running, you would immediately be able to see the default nginx welcome page when requesting `mysite.com`.
+That's it! After the tunnel propagates, you would be able to see the default nginx welcome page when requesting `mysite.com`.
 
-----
-
-# Running Hera
-
-Now we can start Hera by running the following command:
+Viewing the logs would output something similar to below:
 
 ```
-docker run \
-  --name=hera \
-  --network=hera \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /path/to/certs:/certs \
-  aschzero/hera:latest
+$ docker logs -f hera
+
+[INFO] Hera container found, connecting to 5aa5a300dd0e...
+[INFO] Registering tunnel mysite.com
+time="2018-08-11T08:38:40Z" level=info msg="Applied configuration from /var/run/s6/services/mysite.com/config.yml"
+time="2018-08-11T08:38:40Z" level=info msg="Proxying tunnel requests to http://172.18.0.3:80"
+time="2018-08-11T08:38:40Z" level=info msg="Starting metrics server" addr="127.0.0.1:40521"
+time="2018-08-11T08:38:41Z" level=info msg="Connected to SEA"
+time="2018-08-11T08:38:41Z" level=info msg="Route propagating, it may take up to 1 minute for your new route to become functional"
+...
 ```
 
-## Required Volumes
+### Stopping Tunnels
 
-* `/var/run/docker.sock` – Attaching the Docker daemon as a volume allows Hera to monitor container events.
-* `/certs` – The directory of your Cloudflare certificates.
-
-## Persisting Logs
-
-Logs for Hera and active tunnels reside in `/var/log/hera` in addition to being printed to stdout. You can mount a volume to persist the logs on your host machine:
+Stopping a container with an active tunnel will trigger it to shut down:
 
 ```
-docker run \
-  --name=hera \
-  --network=hera \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /path/to/certs:/certs \
-  -v /path/to/logs:/var/log/hera \
-  aschzero/hera:latest
+$ docker stop nginx
+$ docker logs -f hera
+
+[INFO] Stopping tunnel mysite.com
+time="2018-08-11T09:00:53Z" level=info msg="Initiating graceful shutdown..."
+time="2018-08-11T09:00:53Z" level=info msg="Quitting..."
+time="2018-08-11T09:00:53Z" level=info msg="Metrics server stopped"
 ```
-
-* The Hera log file can be found at `/var/log/hera/hera.log`
-* Tunnel log files are named according to their hostname and can be found at `/var/log/hera/<hostname>.log`
-
-----
 
 ## Using Multiple Domains
 
@@ -142,27 +166,17 @@ For example, tunnels for `mysite.com` or `blog.mysite.com` will use the certific
 
 If a certificate with a matching domain cannot be found, it will look for `cert.pem` in the same directory as a fallback.
 
+---
+
 # Examples
 
-Here are just a couple examples of how a container would be configured for Hera.
+## Subdomains
 
-An example using Organizr:
-
-```
-docker run \
-  --name=organizr \
-  --network=hera \
-  --label=hera.hostname=organizr.mysite.com \
-  --label=hera.port=80 \
-  lsiocommunity/organizr
-```
-
-Another example using Kibana:
+An example of a tunnel for Kibana pointing to `kibana.mysite.com`:
 
 ```
 docker run \
   --name=kibana \
-  --network=elkstack \
   --network=hera \
   --label hera.hostname=kibana.mysite.com \
   --label hera.port=5601 \
@@ -170,40 +184,30 @@ docker run \
   docker.elastic.co/kibana/kibana:6.2.4
 ```
 
-* Notice that a container can belong to multiple networks as a means of separating concerns.
-* The `hera.port` label points to the port inside of the container
-* This port mapping would allow you to access Kibana on your local network via port `5000` in addition to `kibana.mysite.com`.
+## Docker Compose
 
-After the container starts you should see similar output to the following in the logs:
+```yaml
+version: '3'
 
-```
-$ docker logs -f hera
+services:
+  hera:
+    image: aschzero/hera:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /path/to/certs:/certs
+    networks:
+      - hera
 
-[INFO] Found certificate: mysite.com
-[INFO] Hera v0.2.0 has started
-[INFO] Hera is listening
-[INFO] Registering tunnel kibana.mysite.com @ 172.21.0.3:80
-[INFO] Logging to /var/log/hera/kibana.mysite.com.log
-INFO[0000] Applied configuration from /etc/services.d/kibana.mysite.com/config.yml
-INFO[0000] Proxying tunnel requests to http://172.21.0.3:5601
-INFO[0000] Starting metrics server                       addr="127.0.0.1:45603"
-INFO[0002] Connected to IAD                              connectionID=0
-INFO[0003] Connected to SEA                              connectionID=1
-...
-```
+  nginx:
+    image: nginx:latest
+    networks:
+      - hera
+    labels:
+      hera.hostname: mysite.com
+      hera.port: 80
 
-And just like that, a tunnel is up and running at `kibana.mysite.com`.
-
-A container that stops running will trigger the tunnel to shut down:
-
-```
-$ docker stop kibana
-$ docker logs -f hera
-
-INFO[0012] Quitting...
-INFO[0012] Metrics server stopped
-INFO[0043] Initiating graceful shutdown...
-[INFO] Stopped tunnel kibana.mysite.com
+networks:
+  hera:
 ```
 
 # Contributing
