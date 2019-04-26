@@ -11,7 +11,7 @@ const (
 	LogDir = "/var/log/hera"
 )
 
-func Init(name string) {
+func InitLogger(name string) {
 	log := logging.MustGetLogger(name)
 	logPath := filepath.Join(LogDir, name)
 
