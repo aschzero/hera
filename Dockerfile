@@ -1,13 +1,13 @@
 ## Builder image
-FROM golang:latest AS builder
+FROM golang:1.12.1-alpine AS builder
 
-WORKDIR /go/src/github.com/aschzero/hera
+RUN apk add --no-cache ca-certificates git
 
-COPY Gopkg.toml Gopkg.lock ./
+WORKDIR /src
 
-RUN go get -u github.com/golang/dep/...
-
-RUN dep ensure --vendor-only
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
 
 COPY . .
 
