@@ -1,4 +1,4 @@
-package certificate
+package main
 
 import (
 	"os"
@@ -19,7 +19,7 @@ func TestFindAll(t *testing.T) {
 		fs.Create(filepath.Join("/certs", newCert))
 	}
 
-	foundCerts, err := FindAll(fs)
+	foundCerts, err := FindAllCertificates(fs)
 	if err != nil {
 		t.Error(err)
 	}
@@ -32,14 +32,14 @@ func TestFindAll(t *testing.T) {
 func TestVerify(t *testing.T) {
 	fs := afero.NewMemMapFs()
 
-	err := Verify(fs)
+	err := VerifyCertificates(fs)
 	if err == nil {
 		t.Error("Expected error")
 	}
 
 	fs.Create("/certs/a.tld.pem")
 
-	err = Verify(fs)
+	err = VerifyCertificates(fs)
 	if err != nil {
 		t.Error(err)
 	}
@@ -49,7 +49,7 @@ func TestFindForHostname(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	fs.Create("/certs/schaper.io.pem")
 
-	cert, err := FindForHostname("schaper.io", fs)
+	cert, err := FindCertificateForHost("schaper.io", fs)
 	if err != nil {
 		t.Error(err)
 	}

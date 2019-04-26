@@ -1,4 +1,4 @@
-package certificate
+package main
 
 import (
 	"errors"
@@ -6,13 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/op/go-logging"
-
 	"github.com/spf13/afero"
-)
-
-var (
-	log = logging.MustGetLogger("hera")
 )
 
 const (
@@ -24,7 +18,7 @@ type Certificate struct {
 	Fs   afero.Fs
 }
 
-func New(name string, fs afero.Fs) *Certificate {
+func NewCertificate(name string, fs afero.Fs) *Certificate {
 	cert := &Certificate{
 		Name: name,
 		Fs:   fs,
@@ -33,7 +27,7 @@ func New(name string, fs afero.Fs) *Certificate {
 	return cert
 }
 
-func FindAll(fs afero.Fs) ([]*Certificate, error) {
+func FindAllCertificates(fs afero.Fs) ([]*Certificate, error) {
 	var certs []*Certificate
 
 	files, err := afero.ReadDir(fs, CertificatePath)
@@ -48,15 +42,15 @@ func FindAll(fs afero.Fs) ([]*Certificate, error) {
 			continue
 		}
 
-		cert := New(name, fs)
+		cert := NewCertificate(name, fs)
 		certs = append(certs, cert)
 	}
 
 	return certs, nil
 }
 
-func Verify(fs afero.Fs) error {
-	certs, err := FindAll(fs)
+func VerifyCertificates(fs afero.Fs) error {
+	certs, err := FindAllCertificates(fs)
 
 	if err != nil || len(certs) == 0 {
 		return errors.New("No certificates found")
@@ -69,8 +63,8 @@ func Verify(fs afero.Fs) error {
 	return nil
 }
 
-func FindForHostname(hostname string, fs afero.Fs) (*Certificate, error) {
-	certs, err := FindAll(fs)
+func FindCertificateForHost(hostname string, fs afero.Fs) (*Certificate, error) {
+	certs, err := FindAllCertificates(fs)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to scan for available certificates: %s", err)
 	}
@@ -84,14 +78,14 @@ func FindForHostname(hostname string, fs afero.Fs) (*Certificate, error) {
 	return nil, fmt.Errorf("Unable to find certificate for %s", hostname)
 }
 
+func (c *Certificate) FullPath() string {
+	return filepath.Join(CertificatePath, c.Name)
+}
+
 func (c *Certificate) belongsToHost(host string) bool {
 	baseCertName := strings.Split(c.Name, ".pem")[0]
 
 	return host == baseCertName
-}
-
-func (c *Certificate) FullPath() string {
-	return filepath.Join(CertificatePath, c.Name)
 }
 
 func (c *Certificate) isExist() bool {

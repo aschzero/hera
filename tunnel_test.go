@@ -1,10 +1,9 @@
-package tunnel
+package main
 
 import (
 	"testing"
 
-	"github.com/aschzero/hera/certificate"
-	"github.com/spf13/afero"
+    "github.com/spf13/afero"
 )
 
 func newTunnel() *Tunnel {
@@ -13,7 +12,7 @@ func newTunnel() *Tunnel {
 		Hostname: "site.tld",
 		Port:     "80",
 	}
-	cert := certificate.New("site.tld.pem", afero.NewMemMapFs())
+	cert := New("site.tld.pem", afero.NewMemMapFs())
 
 	return New(config, cert)
 }

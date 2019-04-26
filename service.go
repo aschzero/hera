@@ -1,12 +1,11 @@
-package tunnel
+package main
 
 import (
 	"os"
-	"path/filepath"
-	"strings"
+    "path/filepath"
+    "strings"
 
-	"github.com/aschzero/hera/exec"
-	"github.com/spf13/afero"
+    "github.com/spf13/afero"
 )
 
 const (
@@ -18,13 +17,13 @@ var fs = afero.NewOsFs()
 
 type Service struct {
 	Hostname string
-	exec.Commander
+	Commander
 }
 
 func NewService(hostname string) *Service {
 	service := &Service{
 		Hostname:  hostname,
-		Commander: exec.Command{},
+		Commander: Command{},
 	}
 
 	return service

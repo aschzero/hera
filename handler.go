@@ -1,4 +1,4 @@
-package listener
+package main
 
 import (
 	"fmt"
@@ -8,11 +8,9 @@ import (
 
 	"github.com/spf13/afero"
 
-	"github.com/aschzero/hera/certificate"
-	"github.com/aschzero/hera/tunnel"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-	tld "github.com/jpillora/go-tld"
+	"github.com/jpillora/go-tld"
 )
 
 const (
@@ -85,13 +83,13 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		return err
 	}
 
-	config := &tunnel.Config{
+	config := &Config{
 		IP:       ip,
 		Hostname: hostname,
 		Port:     port,
 	}
 
-	tunnel := tunnel.New(config, cert)
+	tunnel := NewTunnel(config, cert)
 	tunnel.Start()
 
 	return nil
@@ -108,7 +106,7 @@ func (h *Handler) handleDieEvent(event events.Message) error {
 		return nil
 	}
 
-	tunnel, err := tunnel.Get(hostname)
+	tunnel, err := GetTunnelForHost(hostname)
 	if err != nil {
 		return err
 	}
@@ -152,13 +150,13 @@ func getLabel(name string, container types.ContainerJSON) string {
 	return value
 }
 
-func getCertificate(hostname string, container types.ContainerJSON) (*certificate.Certificate, error) {
+func getCertificate(hostname string, container types.ContainerJSON) (*Certificate, error) {
 	rootHostname, err := getRootHostname(hostname)
 	if err != nil {
 		return nil, err
 	}
 
-	cert, err := certificate.FindForHostname(rootHostname, afero.NewOsFs())
+	cert, err := FindCertificateForHost(rootHostname, afero.NewOsFs())
 	if err != nil {
 		return nil, err
 	}

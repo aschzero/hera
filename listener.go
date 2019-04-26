@@ -1,15 +1,9 @@
-package listener
+package main
 
 import (
-	"io"
+    "io"
 
-	logging "github.com/op/go-logging"
-	"github.com/spf13/afero"
-)
-
-var (
-	fs  = afero.NewOsFs()
-	log = logging.MustGetLogger("hera")
+    "github.com/spf13/afero"
 )
 
 type Listener struct {
@@ -17,7 +11,7 @@ type Listener struct {
 	Fs     afero.Fs
 }
 
-func New() (*Listener, error) {
+func NewListener() (*Listener, error) {
 	client, err := newClient()
 	if err != nil {
 		log.Errorf("Unable to connect to Docker: %s", err)

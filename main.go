@@ -1,25 +1,22 @@
 package main
 
 import (
-	"github.com/aschzero/hera/certificate"
-	"github.com/aschzero/hera/listener"
-	"github.com/aschzero/hera/logger"
 	"github.com/op/go-logging"
 )
 
 var log = logging.MustGetLogger("hera")
 
 func main() {
-	logger.Init("hera")
+	Init("hera")
 
-	listener, err := listener.New()
+	listener, err := NewListener()
 	if err != nil {
 		log.Errorf("Unable to start: %s", err)
 	}
 
 	log.Infof("Hera v%s has started", CurrentVersion)
 
-	err = certificate.Verify(listener.Fs)
+	err = VerifyCertificates(listener.Fs)
 	if err != nil {
 		log.Error(err.Error())
 	}

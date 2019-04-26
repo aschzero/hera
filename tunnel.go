@@ -1,23 +1,20 @@
-package tunnel
+package main
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/aschzero/hera/certificate"
-	logging "github.com/op/go-logging"
 	"github.com/spf13/afero"
 )
 
 var (
 	registry = make(map[string]*Tunnel)
-	log      = logging.MustGetLogger("hera")
 )
 
 type Tunnel struct {
 	Config      *Config
-	Certificate *certificate.Certificate
+	Certificate *Certificate
 	Service     *Service
 }
 
@@ -27,7 +24,7 @@ type Config struct {
 	Port     string
 }
 
-func New(config *Config, certificate *certificate.Certificate) *Tunnel {
+func NewTunnel(config *Config, certificate *Certificate) *Tunnel {
 	service := NewService(config.Hostname)
 
 	tunnel := &Tunnel{
@@ -39,7 +36,7 @@ func New(config *Config, certificate *certificate.Certificate) *Tunnel {
 	return tunnel
 }
 
-func Get(hostname string) (*Tunnel, error) {
+func GetTunnelForHost(hostname string) (*Tunnel, error) {
 	tunnel, ok := registry[hostname]
 
 	if !ok {
