@@ -71,7 +71,7 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		return nil
 	}
 
-	log.Info("Hera container found, connecting to %s...", container.ID[:12])
+	log.Infof("Hera container found, connecting to %s...", container.ID[:12])
 
 	ip, err := h.resolveHostname(container)
 	if err != nil {
