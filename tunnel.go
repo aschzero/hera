@@ -14,20 +14,20 @@ var (
 
 // Tunnel holds the corresponding config, certificate, and service for a tunnel
 type Tunnel struct {
-	Config      *Config
+	Config      *TunnelConfig
 	Certificate *Certificate
 	Service     *Service
 }
 
-type Config struct {
 // TunnelConfig holds the necessary configuration for a tunnel
+type TunnelConfig struct {
 	IP       string
 	Hostname string
 	Port     string
 }
 
-func NewTunnel(config *Config, certificate *Certificate) *Tunnel {
 // NewTunnel returns a Tunnel with its corresponding config and certificate
+func NewTunnel(config *TunnelConfig, certificate *Certificate) *Tunnel {
 	service := NewService(config.Hostname)
 
 	tunnel := &Tunnel{

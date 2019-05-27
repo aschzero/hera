@@ -90,7 +90,7 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		return err
 	}
 
-	config := &Config{
+	config := &TunnelConfig{
 		IP:       ip,
 		Hostname: hostname,
 		Port:     port,
