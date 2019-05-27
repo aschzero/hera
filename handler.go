@@ -78,7 +78,7 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		return err
 	}
 
-	cert, err := getCertificate(hostname, container)
+	cert, err := getCertificate(hostname)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func getLabel(name string, container types.ContainerJSON) string {
 	return value
 }
 
-func getCertificate(hostname string, container types.ContainerJSON) (*Certificate, error) {
+func getCertificate(hostname string) (*Certificate, error) {
 	rootHostname, err := getRootHostname(hostname)
 	if err != nil {
 		return nil, err
