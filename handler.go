@@ -78,7 +78,7 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		return nil
 	}
 
-	log.Infof("Hera container found, connecting to %s...", container.ID[:12])
+	log.Infof("Container found, connecting to %s...", container.ID[:12])
 
 	ip, err := h.resolveHostname(container)
 	if err != nil {
@@ -133,14 +133,18 @@ func (h *Handler) handleDieEvent(event events.Message) error {
 func (h *Handler) resolveHostname(container types.ContainerJSON) (string, error) {
 	var resolved []string
 	var err error
-	attempts := 0
 
-	for attempts < 5 {
+	attempts := 0
+	maxAttempts := 5
+
+	for attempts < maxAttempts {
 		attempts++
 		resolved, err = net.LookupHost(container.Config.Hostname)
 
 		if err != nil {
 			time.Sleep(2 * time.Second)
+			log.Infof("Unable to connect, retrying... (%d/%d)", attempts, maxAttempts)
+
 			continue
 		}
 
