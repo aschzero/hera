@@ -61,7 +61,7 @@ func TestFindForHostname(t *testing.T) {
 
 func TestBelongsToHost(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	cert := New("hostname.com.pem", fs)
+	cert := NewCertificate("hostname.com.pem", fs)
 
 	belongs := cert.belongsToHost("hostname.com")
 	if !belongs {
@@ -77,7 +77,7 @@ func TestBelongsToHost(t *testing.T) {
 func TestFullPath(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	name := "mysite.pem"
-	cert := New(name, fs)
+	cert := NewCertificate(name, fs)
 
 	expected := strings.Join([]string{CertificatePath, name}, "/")
 	if cert.FullPath() != expected {

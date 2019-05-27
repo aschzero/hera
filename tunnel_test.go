@@ -7,14 +7,14 @@ import (
 )
 
 func newTunnel() *Tunnel {
-	config := &Config{
+	config := &TunnelConfig{
 		IP:       "172.23.0.4",
 		Hostname: "site.tld",
 		Port:     "80",
 	}
-	cert := New("site.tld.pem", afero.NewMemMapFs())
+	cert := NewCertificate("site.tld.pem", afero.NewMemMapFs())
 
-	return New(config, cert)
+	return NewTunnel(config, cert)
 }
 
 func TestWriteConfigFile(t *testing.T) {
