@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/net/publicsuffix"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/spf13/afero"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-	"github.com/jpillora/go-tld"
 )
 
 const (
@@ -167,7 +166,7 @@ func getLabel(name string, container types.ContainerJSON) string {
 // getCertificate returns a Certificate for a given hostname.
 // An error is returned if the root hostname cannot be parsed or if the certificate cannot be found.
 func getCertificate(hostname string) (*Certificate, error) {
-	rootHostname, err := getRootHostname(hostname)
+	rootHostname, err := getRootDomain(hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -180,17 +179,12 @@ func getCertificate(hostname string) (*Certificate, error) {
 	return cert, nil
 }
 
-// getRootHostname parses and validates a URL and returns the root hostname (e.g.: domain.tld).
-// An error is returned if the hostname does not contain a valid TLD.
-func getRootHostname(hostname string) (string, error) {
-	httpsHostname := strings.Join([]string{"https://", hostname}, "")
-
-	parsed, err := tld.Parse(httpsHostname)
+// getRootDomain returns the root domain for a given hostname
+func getRootDomain(hostname string) (string, error) {
+	domain, err := publicsuffix.EffectiveTLDPlusOne(hostname)
 	if err != nil {
-		return "", fmt.Errorf("Unable to parse hostname %s: %s", httpsHostname, err)
+		return "", err
 	}
 
-	rootHostname := strings.Join([]string{parsed.Domain, parsed.TLD}, ".")
-
-	return rootHostname, nil
+	return domain, nil
 }
