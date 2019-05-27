@@ -1,29 +1,25 @@
-NAME=hera
-BUILDER_IMAGE=$(NAME)-builder
-RELEASE_NAME=aschzero/$(NAME)
 PWD=$(shell pwd)
 
-default: build
+IMAGE=aschzero/hera
+BUILDER_IMAGE=$(IMAGE)-builder
 
-release: tag push
+default: image run
 
-build:
-	docker build -t $(NAME) .
+release: build push
+
+image:
+	docker build -t $(IMAGE) .
 
 test:
 	docker build --target builder -t $(BUILDER_IMAGE) .
-	docker run --rm $(BUILDER_IMAGE) go test ./...
+	docker run --rm -e CGO_ENABLED=0 $(BUILDER_IMAGE) go test
 
 run:
-	docker run --rm --name=$(NAME) --network=$(NAME) -v /var/run/docker.sock:/var/run/docker.sock -v $(PWD)/.certs:/certs -p 9020:9020 $(NAME)
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(PWD)/.certs:/certs --network=hera $(IMAGE)
 
 .PHONY:tunnel
 tunnel:
-	docker run --rm --label hera.hostname=$(HOSTNAME) --label hera.port=80 --network=$(NAME) nginx
-
-tag:
-	docker tag $(NAME):latest $(RELEASE_NAME):latest
+	docker run --rm --label hera.hostname=$(HOSTNAME) --label hera.port=80 --network=hera nginx
 
 push:
-	docker push $(RELEASE_NAME):latest
-
+	docker push $(IMAGE):latest
