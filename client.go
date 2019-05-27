@@ -17,7 +17,7 @@ type Client struct {
 	DockerClient *client.Client
 }
 
-func newClient() (*Client, error) {
+func NewClient() (*Client, error) {
 	cli, err := client.NewClient(Socket, APIVersion, nil, nil)
 	if err != nil {
 		return nil, err

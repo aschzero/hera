@@ -12,7 +12,7 @@ type Listener struct {
 }
 
 func NewListener() (*Listener, error) {
-	client, err := newClient()
+	client, err := NewClient()
 	if err != nil {
 		log.Errorf("Unable to connect to Docker: %s", err)
 		return nil, err
