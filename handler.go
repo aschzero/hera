@@ -144,9 +144,7 @@ func (h *Handler) resolveHostname(container types.ContainerJSON) (string, error)
 			continue
 		}
 
-		if err == nil {
-			return resolved[0], nil
-		}
+		return resolved[0], nil
 	}
 
 	return "", fmt.Errorf("Unable to connect to %s", container.ID[:12])
