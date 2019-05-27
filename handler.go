@@ -18,10 +18,12 @@ const (
 	heraPort     = "hera.port"
 )
 
+// A Handler is responsible for responding to container start and die events
 type Handler struct {
 	Client *Client
 }
 
+// NewHandler returns a new Handler instance
 func NewHandler(client *Client) *Handler {
 	handler := &Handler{
 		Client: client,
@@ -30,6 +32,7 @@ func NewHandler(client *Client) *Handler {
 	return handler
 }
 
+// HandleEvent dispatches an event to the appropriate handler method depending on its status
 func (h *Handler) HandleEvent(event events.Message) {
 	switch status := event.Status; status {
 	case "start":
@@ -46,6 +49,8 @@ func (h *Handler) HandleEvent(event events.Message) {
 	}
 }
 
+// HandleContainer allows immediate tunnel creation when hera is started by treating existing
+// containers as start events
 func (h *Handler) HandleContainer(id string) error {
 	event := events.Message{
 		ID: id,
@@ -59,6 +64,8 @@ func (h *Handler) HandleContainer(id string) error {
 	return nil
 }
 
+// handleStartEvent inspects the container from a start event and creates a tunnel if the container
+// has been appropriately labeled and a certificate exists for its hostname
 func (h *Handler) handleStartEvent(event events.Message) error {
 	container, err := h.Client.Inspect(event.ID)
 	if err != nil {
@@ -95,6 +102,8 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 	return nil
 }
 
+// handleDieEvent inspects the container from a die event and stops the tunnel if one exists.
+// An error is returned if a tunnel cannot be found or if the tunnel fails to stop
 func (h *Handler) handleDieEvent(event events.Message) error {
 	container, err := h.Client.Inspect(event.ID)
 	if err != nil {
@@ -119,6 +128,8 @@ func (h *Handler) handleDieEvent(event events.Message) error {
 	return nil
 }
 
+// resolveHostname returns the IP address of a container from its hostname.
+// An error is returned if the hostname cannot be resolved after five attempts.
 func (h *Handler) resolveHostname(container types.ContainerJSON) (string, error) {
 	var resolved []string
 	var err error
@@ -141,6 +152,7 @@ func (h *Handler) resolveHostname(container types.ContainerJSON) (string, error)
 	return "", fmt.Errorf("Unable to connect to %s", container.ID[:12])
 }
 
+// getLabel returns the label value from a given label name and container JSON.
 func getLabel(name string, container types.ContainerJSON) string {
 	value, ok := container.Config.Labels[name]
 	if !ok {
@@ -150,6 +162,8 @@ func getLabel(name string, container types.ContainerJSON) string {
 	return value
 }
 
+// getCertificate returns a Certificate for a given hostname.
+// An error is returned if the root hostname cannot be parsed or if the certificate cannot be found.
 func getCertificate(hostname string) (*Certificate, error) {
 	rootHostname, err := getRootHostname(hostname)
 	if err != nil {
@@ -164,6 +178,8 @@ func getCertificate(hostname string) (*Certificate, error) {
 	return cert, nil
 }
 
+// getRootHostname parses and validates a URL and returns the root hostname (e.g.: domain.tld).
+// An error is returned if the hostname does not contain a valid TLD.
 func getRootHostname(hostname string) (string, error) {
 	httpsHostname := strings.Join([]string{"https://", hostname}, "")
 

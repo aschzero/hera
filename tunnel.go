@@ -12,6 +12,7 @@ var (
 	registry = make(map[string]*Tunnel)
 )
 
+// Tunnel holds the corresponding config, certificate, and service for a tunnel
 type Tunnel struct {
 	Config      *Config
 	Certificate *Certificate
@@ -19,12 +20,14 @@ type Tunnel struct {
 }
 
 type Config struct {
+// TunnelConfig holds the necessary configuration for a tunnel
 	IP       string
 	Hostname string
 	Port     string
 }
 
 func NewTunnel(config *Config, certificate *Certificate) *Tunnel {
+// NewTunnel returns a Tunnel with its corresponding config and certificate
 	service := NewService(config.Hostname)
 
 	tunnel := &Tunnel{
@@ -36,6 +39,8 @@ func NewTunnel(config *Config, certificate *Certificate) *Tunnel {
 	return tunnel
 }
 
+// GetTunnelForHost returns the tunnel for a given hostname.
+// An error is returned if a tunnel is not found.
 func GetTunnelForHost(hostname string) (*Tunnel, error) {
 	tunnel, ok := registry[hostname]
 
@@ -46,6 +51,7 @@ func GetTunnelForHost(hostname string) (*Tunnel, error) {
 	return tunnel, nil
 }
 
+// Start starts a tunnel
 func (t *Tunnel) Start() error {
 	err := t.prepareService()
 	if err != nil {
@@ -62,6 +68,7 @@ func (t *Tunnel) Start() error {
 	return nil
 }
 
+// Stop stops a tunnel
 func (t *Tunnel) Stop() error {
 	log.Infof("Stopping tunnel %s", t.Config.Hostname)
 
@@ -73,6 +80,7 @@ func (t *Tunnel) Stop() error {
 	return nil
 }
 
+// prepareService creates the service and necessary files for the tunnel service
 func (t *Tunnel) prepareService() error {
 	err := t.Service.Create()
 	if err != nil {
@@ -92,6 +100,7 @@ func (t *Tunnel) prepareService() error {
 	return nil
 }
 
+// startService starts the tunnel service
 func (t *Tunnel) startService() error {
 	supervised, err := t.Service.IsSupervised()
 	if err != nil {
@@ -132,6 +141,7 @@ func (t *Tunnel) startService() error {
 	return nil
 }
 
+// writeConfigFile creates the config file for a tunnel
 func (t *Tunnel) writeConfigFile() error {
 	configLines := []string{
 		"hostname: %s",
@@ -151,6 +161,7 @@ func (t *Tunnel) writeConfigFile() error {
 	return nil
 }
 
+// writeRunFile creates the run file for a tunnel
 func (t *Tunnel) writeRunFile() error {
 	runLines := []string{
 		"#!/bin/sh",

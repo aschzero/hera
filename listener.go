@@ -6,11 +6,13 @@ import (
     "github.com/spf13/afero"
 )
 
+// Listener holds config for an event listener and is used to listen for container events
 type Listener struct {
 	Client *Client
 	Fs     afero.Fs
 }
 
+// NewListener returns a new Listener
 func NewListener() (*Listener, error) {
 	client, err := NewClient()
 	if err != nil {
@@ -26,6 +28,7 @@ func NewListener() (*Listener, error) {
 	return listener, nil
 }
 
+// Revive revives tunnels for currently running containers
 func (l *Listener) Revive() error {
 	handler := NewHandler(l.Client)
 	containers, err := l.Client.ListContainers()
@@ -43,6 +46,7 @@ func (l *Listener) Revive() error {
 	return nil
 }
 
+// Listen listens for container events to be handled
 func (l *Listener) Listen() {
 	log.Info("Hera is listening")
 
