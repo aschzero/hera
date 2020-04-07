@@ -1,0 +1,35 @@
+## Builder image
+FROM arm32v7/golang:1.14-alpine AS builder
+
+RUN apk add --no-cache ca-certificates git
+
+WORKDIR /src
+
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 go build -o /dist/hera
+
+## Final image
+FROM arm32v7/alpine:3.11
+
+RUN apk add --no-cache ca-certificates curl
+
+RUN curl -L -s https://github.com/just-containers/s6-overlay/releases/download/v1.22.1.0/s6-overlay-armhf.tar.gz \
+  | tar xvzf - -C /
+
+RUN curl -L -s https://bin.equinox.io/c/VdrWdbjqyF/cloudflared-stable-linux-arm.tgz \
+  | tar xvzf - -C /bin
+
+RUN mkdir /lib64 && ln -s /lib/libc.musl-armhf.so.1 /lib64/ld-linux-armhf.so.2
+
+RUN apk del --no-cache curl
+
+COPY --from=builder /dist/hera /bin/
+
+COPY rootfs /
+
+ENTRYPOINT ["/init"]
