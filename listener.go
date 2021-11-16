@@ -1,9 +1,10 @@
 package main
 
 import (
-    "io"
+	"io"
 
-    "github.com/spf13/afero"
+	"github.com/docker/docker/api/types/events"
+	"github.com/spf13/afero"
 )
 
 // Listener holds config for an event listener and is used to listen for container events
@@ -31,18 +32,39 @@ func NewListener() (*Listener, error) {
 // Revive revives tunnels for currently running containers
 func (l *Listener) Revive() error {
 	handler := NewHandler(l.Client)
-	containers, err := l.Client.ListContainers()
-	if err != nil {
-		return err
-	}
 
-	for _, c := range containers {
-		err := handler.HandleContainer(c.ID)
+	if SwarmMode {
+		services, err := l.Client.ListServices()
 		if err != nil {
 			return err
 		}
-	}
 
+		for _, svc := range services {
+			e := events.Message{}
+			e.Actor.ID = svc.ID
+			err := handler.handleStartEvent(e)
+			if err != nil {
+				return err
+			}
+		}
+
+	} else {
+
+		containers, err := l.Client.ListContainers()
+		if err != nil {
+			return err
+		}
+
+		for _, c := range containers {
+			e := events.Message{}
+			e.ID = c.ID
+			err := handler.handleStartEvent(e)
+			if err != nil {
+				return err
+			}
+		}
+
+	}
 	return nil
 }
 

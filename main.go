@@ -4,6 +4,13 @@ import (
 	"github.com/op/go-logging"
 )
 
+const (
+	SwarmMode    = true
+	heraHostname = "hera.hostname"
+	heraPort     = "hera.port"
+	heraNetwork  = "hera"
+)
+
 var log = logging.MustGetLogger("hera")
 
 func main() {

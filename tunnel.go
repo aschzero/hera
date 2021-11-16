@@ -21,6 +21,7 @@ type Tunnel struct {
 
 // TunnelConfig holds the necessary configuration for a tunnel
 type TunnelConfig struct {
+	ID       string
 	IP       string
 	Hostname string
 	Port     string
@@ -39,18 +40,6 @@ func NewTunnel(config *TunnelConfig, certificate *Certificate) *Tunnel {
 	return tunnel
 }
 
-// GetTunnelForHost returns the tunnel for a given hostname.
-// An error is returned if a tunnel is not found.
-func GetTunnelForHost(hostname string) (*Tunnel, error) {
-	tunnel, ok := registry[hostname]
-
-	if !ok {
-		return nil, fmt.Errorf("No tunnel exists for %s", hostname)
-	}
-
-	return tunnel, nil
-}
-
 // Start starts a tunnel
 func (t *Tunnel) Start() error {
 	err := t.prepareService()
@@ -63,7 +52,7 @@ func (t *Tunnel) Start() error {
 		return err
 	}
 
-	registry[t.Config.Hostname] = t
+	registry[t.Config.ID] = t
 
 	return nil
 }
@@ -76,7 +65,7 @@ func (t *Tunnel) Stop() error {
 	if err != nil {
 		return err
 	}
-
+	registry[t.Config.ID] = nil
 	return nil
 }
 

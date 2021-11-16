@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 )
 
@@ -42,7 +43,22 @@ func (c *Client) ListContainers() ([]types.Container, error) {
 	return c.DockerClient.ContainerList(context.Background(), types.ContainerListOptions{})
 }
 
+// ListServices returns a collection of Docker services
+func (c *Client) ListServices() ([]swarm.Service, error) {
+	return c.DockerClient.ServiceList(context.Background(), types.ServiceListOptions{})
+}
+
 // Inspect returns the full information for a container with the given container ID
 func (c *Client) Inspect(id string) (types.ContainerJSON, error) {
 	return c.DockerClient.ContainerInspect(context.Background(), id)
+}
+
+// InspectSvc returns the full information for a container with the given container ID
+func (c *Client) InspectSvc(id string) (swarm.Service, []byte, error) {
+	return c.DockerClient.ServiceInspectWithRaw(context.Background(), id, types.ServiceInspectOptions{})
+}
+
+// FindNetwork returns the full information for a container with the given container ID
+func (c *Client) InspectNetwork(id string) (types.NetworkResource, error) {
+	return c.DockerClient.NetworkInspect(context.Background(), id, types.NetworkInspectOptions{})
 }
