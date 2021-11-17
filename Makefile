@@ -15,9 +15,8 @@ release: image push ## See image | push
 image: $(CF_BIN) ## Buid the Docker image
 	docker build -t ${IMAGE}:${TAG} .
 
-test: ## Run tests
-	docker build --target builder -t $(BUILDER_IMAGE) .
-	docker run --rm  $(BUILDER_IMAGE) go test
+push: ## Push to hub.docker.com
+	docker push ${IMAGE}:${TAG}
 
 run: ## Run Hera from CWD
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(PWD)/.certs:/certs --network=hera $(IMAGE)
@@ -25,8 +24,9 @@ run: ## Run Hera from CWD
 tunnel: ## Create an nginx container that uses Hera. Requires ${HOSTNAME}
 	docker run --rm --label hera.hostname=$(HOSTNAME) --label hera.port=80 --network=hera nginx
 
-push: ## Push to hub.docker.com
-	docker push ${IMAGE}:${TAG}
+test: ## Run tests
+	docker build --target builder -t $(BUILDER_IMAGE) .
+	docker run --rm  $(BUILDER_IMAGE) go test
 
 cfupdate: clean $(CF_BIN) ## Download the latest cloudflared
 

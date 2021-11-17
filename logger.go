@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	LogDir = "/var/log/hera"
+	LogDir = "/var/log/hera/"
 )
 
 func InitLogger(name string) {
