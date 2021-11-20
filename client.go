@@ -58,7 +58,7 @@ func (c *Client) InspectSvc(id string) (swarm.Service, []byte, error) {
 	return c.DockerClient.ServiceInspectWithRaw(context.Background(), id, types.ServiceInspectOptions{})
 }
 
-// FindNetwork returns the full information for a container with the given container ID
+// InspectNetwork returns the full information for a container with the given container ID
 func (c *Client) InspectNetwork(id string) (types.NetworkResource, error) {
 	return c.DockerClient.NetworkInspect(context.Background(), id, types.NetworkInspectOptions{})
 }

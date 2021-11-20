@@ -27,7 +27,7 @@ func init() {
 	heraHostname = heraArgs.HostnameLabel
 	heraPort = heraArgs.PortLabel
 
-	mode := "engine"
+	mode := "standalone"
 	if SwarmMode {
 		mode = "swarm"
 	}
