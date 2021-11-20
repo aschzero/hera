@@ -33,7 +33,7 @@ func NewListener() (*Listener, error) {
 func (l *Listener) Revive() error {
 	handler := NewHandler(l.Client)
 
-	if SwarmMode {
+	if swarmMode {
 		services, err := l.Client.ListServices()
 		if err != nil {
 			return err

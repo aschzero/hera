@@ -48,13 +48,13 @@ func (c *Client) ListServices() ([]swarm.Service, error) {
 	return c.DockerClient.ServiceList(context.Background(), types.ServiceListOptions{})
 }
 
-// Inspect returns the full information for a container with the given container ID
-func (c *Client) Inspect(id string) (types.ContainerJSON, error) {
+// InspectContainer returns the full information for a container with the given container ID
+func (c *Client) InspectContainer(id string) (types.ContainerJSON, error) {
 	return c.DockerClient.ContainerInspect(context.Background(), id)
 }
 
-// InspectSvc returns the full information for a container with the given container ID
-func (c *Client) InspectSvc(id string) (swarm.Service, []byte, error) {
+// InspectService returns the full information for a container with the given container ID
+func (c *Client) InspectService(id string) (swarm.Service, []byte, error) {
 	return c.DockerClient.ServiceInspectWithRaw(context.Background(), id, types.ServiceInspectOptions{})
 }
 

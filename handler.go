@@ -57,19 +57,19 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		id       string
 	)
 
-	if SwarmMode {
+	if swarmMode {
 		if event.Type != events.ServiceEventType {
 			return nil
 		}
 
 		id = event.Actor.ID
-		service, _, err := h.Client.InspectSvc(id)
+		service, _, err := h.Client.InspectService(id)
 		if err != nil {
 			return err
 		}
 
-		hostname = getServiceLabel(heraHostname, service)
-		port = getServiceLabel(heraPort, service)
+		hostname = getServiceLabel(heraHostLabel, service)
+		port = getServiceLabel(heraPortLabel, service)
 		if hostname == "" || port == "" {
 			return nil
 		}
@@ -84,13 +84,13 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 	} else {
 
 		id = event.ID
-		container, err := h.Client.Inspect(id)
+		container, err := h.Client.InspectContainer(id)
 		if err != nil {
 			return err
 		}
 
-		hostname = getLabel(heraHostname, container)
-		port = getLabel(heraPort, container)
+		hostname = getLabel(heraHostLabel, container)
+		port = getLabel(heraPortLabel, container)
 		if hostname == "" || port == "" {
 			return nil
 		}
@@ -125,7 +125,7 @@ func (h *Handler) handleDieEvent(event events.Message) error {
 
 	var id string
 
-	if SwarmMode {
+	if swarmMode {
 		id = event.Actor.ID
 	} else {
 		id = event.ID

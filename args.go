@@ -4,31 +4,31 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
-var heraArgs struct {
-	Swarm         bool   `arg:"env:HERA_SWARM" help:"enable Swarm mode"`
-	Network       string `arg:"--net,-n,env:HERA_NETWORK" help:"docker network name to monitor" default:"hera"`
-	HostnameLabel string `arg:"--host,-l,env:HERA_HOSTNAME" help:"label containing public tunnel host" default:"hera.hostname"`
-	PortLabel     string `arg:"--port,-p,env:HERA_PORT" help:"label containing the container/service port" default:"hera.port"`
+var conf struct {
+	Swarm bool `arg:"env:HERA_SWARM" help:"enable Swarm mode"`
+	// Network       string `arg:"--net,-n,env:HERA_NETWORK" help:"docker network name to monitor" default:"hera"`
+	HostnameLabel string `arg:"--host,-l,env:HERA_HOST_LABEL" help:"label containing public tunnel host" default:"hera.hostname"`
+	PortLabel     string `arg:"--port,-p,env:HERA_PORT_LABEL" help:"label containing the container/service port" default:"hera.port"`
 }
 
 var (
-	SwarmMode    bool
-	heraNetwork  string
-	heraHostname string
-	heraPort     string
+	swarmMode     bool
+	heraHostLabel string
+	heraPortLabel string
+	heraNetwork   string
 )
 
 func init() {
 	InitLogger("hera.log")
-	arg.MustParse(&heraArgs)
+	arg.MustParse(&conf)
 
-	SwarmMode = heraArgs.Swarm
-	heraNetwork = heraArgs.PortLabel
-	heraHostname = heraArgs.HostnameLabel
-	heraPort = heraArgs.PortLabel
+	swarmMode = conf.Swarm
+	heraNetwork = conf.PortLabel
+	heraHostLabel = conf.HostnameLabel
+	heraPortLabel = conf.PortLabel
 
 	mode := "standalone"
-	if SwarmMode {
+	if swarmMode {
 		mode = "swarm"
 	}
 

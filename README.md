@@ -172,9 +172,9 @@ services:
   hera:
     image: audibleblink/hera
     environment:
-      - "HERA_SWARM=1"                    # Enable Swarm Mode
-      - "HERA_HOSTNAME=hera.nginx.host"   # Label that Hera will look for on containers/services
-      - "HERA_PORT=hera.nginx.port"       # Label that Hera will look for on containers/services
+      - "HERA_SWARM=1"                      # Enable Swarm Mode
+      - "HERA_HOST_LABEL=hera.nginx.host"   # Label that Hera will look for on containers/services
+      - "HERA_PORT_LABEL=hera.nginx.port"   # Label that Hera will look for on containers/services
     networks:
       - hera
     volumes:

@@ -1,7 +1,7 @@
 ## Builder image
 FROM golang:1.17-alpine AS builder
 WORKDIR /src
-COPY go.mod go.mod .
+COPY go.mod go.mod ./
 RUN go mod download
 COPY . .
 RUN  go build -o /dist/hera
