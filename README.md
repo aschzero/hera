@@ -75,6 +75,8 @@ For example, to create a network named `hera`:
 
 # Running Hera
 
+
+## Standalone Docker
 Hera can be started with the following command:
 
 ```
@@ -107,15 +109,18 @@ docker run \
 
 ℹ️ Tunnel log files are named according to their hostname and can be found at `/var/log/hera/<hostname>.log`
 
+
 ## Tunnel Configuration
 
-Hera utilizes labels for configuration as a way to let you be explicit about which containers you want enabled. There are only two labels that need to be defined:
+Hera utilizes labels for configuration as a way to let you be explicit about which containers you
+want enabled. There are only two labels that need to be defined:
 
 * `hera.hostname` - The hostname is the address you'll use to request the service outside of your home network. It must be the same as the domain you used to configure your certificate and can either be a root domain or subdomain (e.g.: `mysite.com` or `blog.mysite.com`).
 
 * `hera.port` - The port your service is running on inside the container.
 
-⚠️ _Note: you can still expose a different port to your host network if desired, but the `hera.port` label value needs to be the internal port within the container._
+⚠️ _Note: you can still expose a different port to your host network if desired, but the `hera.port`
+label value needs to be the internal port within the container._
 
 Here's an example of a container configured for Hera with the `docker run` command:
 
@@ -143,6 +148,57 @@ time="2018-08-11T08:38:41Z" level=info msg="Connected to SEA"
 time="2018-08-11T08:38:41Z" level=info msg="Route propagating, it may take up to 1 minute for your new route to become functional"
 ...
 ```
+
+## Swarm Mode
+
+Given that Swarm prioritizes `services` over containers, the standard mode won't work very well.
+To enable Swarm Mode, do so through an environment variable.
+The labels that Hera listens for are also customizable.
+
+```yaml
+version: "3.8"
+
+secrets:
+  site.com.pem:
+    name: site.com.pem
+    external: true
+
+networks:
+  hera:
+    external: true
+
+services:
+
+  hera:
+    image: audibleblink/hera
+    environment:
+      - "HERA_SWARM=1"                      # Enable Swarm Mode
+      - "HERA_HOST_LABEL=hera.nginx.host"   # Label that Hera will look for on containers/services
+      - "HERA_PORT_LABEL=hera.nginx.port"   # Label that Hera will look for on containers/services
+    networks:
+      - hera
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/mnt/swarm/hera:/var/log/hera"
+    secrets:
+      - source: site.com.pem
+        target: /certs/site.com.pem
+        mode: 0400
+    deploy:
+
+
+  nginx:
+    image: nginx
+    networks:
+      - hera
+    ports:
+      - 80
+    deploy:
+      labels:
+        - "hera.nginx.hostname=dev.site.com"
+        - "hera.nginx.port=80"
+```
+
 
 ### Stopping Tunnels
 

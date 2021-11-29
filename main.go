@@ -7,7 +7,6 @@ import (
 var log = logging.MustGetLogger("hera")
 
 func main() {
-	InitLogger("hera")
 
 	listener, err := NewListener()
 	if err != nil {

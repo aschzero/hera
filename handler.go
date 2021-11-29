@@ -2,19 +2,16 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/net/publicsuffix"
 	"net"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 
 	"github.com/spf13/afero"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-)
-
-const (
-	heraHostname = "hera.hostname"
-	heraPort     = "hera.port"
+	"github.com/docker/docker/api/types/swarm"
 )
 
 // A Handler is responsible for responding to container start and die events
@@ -33,14 +30,15 @@ func NewHandler(client *Client) *Handler {
 
 // HandleEvent dispatches an event to the appropriate handler method depending on its status
 func (h *Handler) HandleEvent(event events.Message) {
-	switch status := event.Status; status {
-	case "start":
+
+	switch status := event.Action; status {
+	case "start", "update":
 		err := h.handleStartEvent(event)
 		if err != nil {
 			log.Error(err.Error())
 		}
 
-	case "die":
+	case "die", "remove":
 		err := h.handleDieEvent(event)
 		if err != nil {
 			log.Error(err.Error())
@@ -48,40 +46,61 @@ func (h *Handler) HandleEvent(event events.Message) {
 	}
 }
 
-// HandleContainer allows immediate tunnel creation when hera is started by treating existing
-// containers as start events
-func (h *Handler) HandleContainer(id string) error {
-	event := events.Message{
-		ID: id,
-	}
-
-	err := h.handleStartEvent(event)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // handleStartEvent inspects the container from a start event and creates a tunnel if the container
 // has been appropriately labeled and a certificate exists for its hostname
 func (h *Handler) handleStartEvent(event events.Message) error {
-	container, err := h.Client.Inspect(event.ID)
-	if err != nil {
-		return err
-	}
 
-	hostname := getLabel(heraHostname, container)
-	port := getLabel(heraPort, container)
-	if hostname == "" || port == "" {
-		return nil
-	}
+	var (
+		hostname string
+		port     string
+		ip       string
+		id       string
+	)
 
-	log.Infof("Container found, connecting to %s...", container.ID[:12])
+	if swarmMode {
+		if event.Type != events.ServiceEventType {
+			return nil
+		}
 
-	ip, err := h.resolveHostname(container)
-	if err != nil {
-		return err
+		id = event.Actor.ID
+		service, _, err := h.Client.InspectService(id)
+		if err != nil {
+			return err
+		}
+
+		hostname = getServiceLabel(heraHostLabel, service)
+		port = getServiceLabel(heraPortLabel, service)
+		if hostname == "" || port == "" {
+			return nil
+		}
+
+		log.Infof("Service found, connecting to %s...", service.ID[:12])
+
+		ip, err = h.resolveHostname(event.Actor.Attributes["name"])
+		if err != nil {
+			return err
+		}
+
+	} else {
+
+		id = event.ID
+		container, err := h.Client.InspectContainer(id)
+		if err != nil {
+			return err
+		}
+
+		hostname = getLabel(heraHostLabel, container)
+		port = getLabel(heraPortLabel, container)
+		if hostname == "" || port == "" {
+			return nil
+		}
+
+		log.Infof("Container found, connecting to %s...", container.ID[:12])
+
+		ip, err = h.resolveHostname(container.Config.Hostname)
+		if err != nil {
+			return err
+		}
 	}
 
 	cert, err := getCertificate(hostname)
@@ -90,46 +109,39 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 	}
 
 	config := &TunnelConfig{
+		ID:       id,
 		IP:       ip,
 		Hostname: hostname,
 		Port:     port,
 	}
 
 	tunnel := NewTunnel(config, cert)
-	tunnel.Start()
-
-	return nil
+	return tunnel.Start()
 }
 
 // handleDieEvent inspects the container from a die event and stops the tunnel if one exists.
 // An error is returned if a tunnel cannot be found or if the tunnel fails to stop
 func (h *Handler) handleDieEvent(event events.Message) error {
-	container, err := h.Client.Inspect(event.ID)
-	if err != nil {
-		return err
+
+	var id string
+
+	if swarmMode {
+		id = event.Actor.ID
+	} else {
+		id = event.ID
 	}
 
-	hostname := getLabel("hera.hostname", container)
-	if hostname == "" {
+	tunnel, hadTunnel := registry[id]
+	if !hadTunnel {
 		return nil
 	}
 
-	tunnel, err := GetTunnelForHost(hostname)
-	if err != nil {
-		return err
-	}
-
-	err = tunnel.Stop()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tunnel.Stop()
 }
 
 // resolveHostname returns the IP address of a container from its hostname.
 // An error is returned if the hostname cannot be resolved after five attempts.
-func (h *Handler) resolveHostname(container types.ContainerJSON) (string, error) {
+func (h *Handler) resolveHostname(hostname string) (string, error) {
 	var resolved []string
 	var err error
 
@@ -138,7 +150,7 @@ func (h *Handler) resolveHostname(container types.ContainerJSON) (string, error)
 
 	for attempts < maxAttempts {
 		attempts++
-		resolved, err = net.LookupHost(container.Config.Hostname)
+		resolved, err = net.LookupHost(hostname)
 
 		if err != nil {
 			time.Sleep(2 * time.Second)
@@ -150,12 +162,22 @@ func (h *Handler) resolveHostname(container types.ContainerJSON) (string, error)
 		return resolved[0], nil
 	}
 
-	return "", fmt.Errorf("Unable to connect to %s", container.ID[:12])
+	return "", fmt.Errorf("Unable to connect to %s", hostname)
 }
 
 // getLabel returns the label value from a given label name and container JSON.
 func getLabel(name string, container types.ContainerJSON) string {
 	value, ok := container.Config.Labels[name]
+	if !ok {
+		return ""
+	}
+
+	return value
+}
+
+// getServiceLabel returns the label value from a given label name and service
+func getServiceLabel(name string, service swarm.Service) string {
+	value, ok := service.Spec.Labels[name]
 	if !ok {
 		return ""
 	}
